@@ -1,0 +1,76 @@
+version: 1
+capability:
+  id: personal-homepage
+  name: 纯前端个人主页
+environment:
+  targetUrl: http://127.0.0.1:4177
+  viewport:
+    width: 1280
+    height: 900
+cases:
+  - id: browse-personal-space
+    description: 访客打开首页，搜索并阅读文章，浏览作品详情和随想。
+    assertions:
+      - id: home-ready
+        type: visible
+        description: 首页显示自我介绍、作品入口和太阳导航图标。
+      - id: typography-system
+        type: visible
+        description: 首页品牌字、中文展示标题和正文使用明确分层的字体体系。
+      - id: celestial-navigation
+        type: visible
+        description: 太阳系天体和导航缩略图完成渲染，点击地球进入作品页。
+      - id: saturn-ring-layering
+        type: visible
+        description: 土星使用前后分层的星环，球体不会被完整椭圆线穿过。
+      - id: planet-hover-focus
+        type: visible
+        description: 悬停地球时对应轨道高亮，并显示实际直径信息。
+      - id: solar-surface-detail
+        type: visible
+        description: 太阳使用独立表面画布，并固定显示 Sun 英文标签；悬停后显示实际直径。
+      - id: three-dimensional-system
+        type: visible
+        description: 首页由 Three.js 透视太阳系接管，并保留可交互的栏目标签。
+      - id: solar-system-fitted
+        type: visible
+        description: Three.js 太阳系按容器尺寸安全适配，外侧行星与土星环保持在可视舞台内。
+      - id: expanded-sections
+        type: visible
+        description: 关于、实验、经历、收藏和随想标签均能打开对应内容。
+      - id: section-background-scenes
+        type: visible
+        description: 每个栏目切换到与栏目语义匹配的独立 Canvas 背景场景。
+      - id: motion-control
+        type: visible
+        description: 动效可以暂停和恢复，按钮与页面状态一致。
+      - id: orbital-time-control
+        type: visible
+        description: 可以加速、放慢行星绕太阳公转的速度，读数与状态一致。
+      - id: solar-decor
+        type: visible
+        description: 太阳系包含小行星带、星尘与流星等装饰性元素以丰富画面。
+      - id: search-matches
+        type: visible
+        description: 搜索自留地后显示匹配文章。
+      - id: article-readable
+        type: visible
+        description: 文章详情显示完整正文，Escape 可以关闭。
+      - id: empty-search
+        type: visible
+        description: 搜索不存在的词时显示无结果提示。
+      - id: filtered-projects
+        type: visible
+        description: 工具分类只显示两个演示工具项目。
+      - id: project-readable
+        type: visible
+        description: 项目详情明确展示概念示例说明。
+      - id: ideas-readable
+        type: visible
+        description: 随想页显示完整的随想内容。
+      - id: theme-switch
+        type: visible
+        description: 切换主题后出现切回深色模式的按钮。
+      - id: honest-contact
+        type: visible
+        description: 未配置邮箱时明确提示尚未提供联系方式。

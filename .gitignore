@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.env.*
+.harness-e2e/ms-playwright/
+.harness-e2e/generated/
+.harness-e2e/runs/
+.harness-e2e/test-results/
+.harness-e2e/playwright-report/
+artifacts/
+*.log

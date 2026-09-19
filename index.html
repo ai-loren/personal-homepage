@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-page="home">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0c1014">
+    <meta name="description" content="一个关于创造、技术与日常思考的个人空间。">
+    <title>loren — 一个持续生长的个人空间</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./vendor/three.min.js" defer></script>
+    <script src="./content.js" defer></script>
+    <script src="./app.js" defer></script>
+    <script src="./globe-renderer.js" defer></script>
+    <script src="./cosmos.js" defer></script>
+    <script src="./solar-system-3d.js" defer></script>
+    <script src="./page-scenes.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳转到内容</a>
+    <div class="sky" aria-hidden="true"><canvas id="starfield"></canvas><canvas id="page-art"></canvas></div>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="wordmark" href="#home" aria-label="返回首页" data-site-name>loren<span>.</span></a>
+        <nav class="desktop-nav" aria-label="主导航">
+          <a href="#home" data-nav="home"><span class="celestial-icon celestial-icon-sun" aria-hidden="true"></span>首页</a>
+          <a href="#about" data-nav="about"><span class="celestial-icon" data-celestial-icon="mercury" aria-hidden="true"></span>关于 <span class="nav-en">About</span></a>
+          <a href="#writing" data-nav="writing"><span class="celestial-icon" data-celestial-icon="moon" aria-hidden="true"></span>文字 <span class="nav-en">Writing</span></a>
+          <a href="#projects" data-nav="projects"><span class="celestial-icon" data-celestial-icon="earth" aria-hidden="true"></span>作品 <span class="nav-en">Projects</span></a>
+          <a href="#lab" data-nav="lab"><span class="celestial-icon" data-celestial-icon="mars" aria-hidden="true"></span>实验 <span class="nav-en">Lab</span></a>
+          <a href="#journey" data-nav="journey"><span class="celestial-icon" data-celestial-icon="jupiter" aria-hidden="true"></span>经历 <span class="nav-en">Journey</span></a>
+          <a href="#library" data-nav="library"><span class="celestial-icon celestial-icon-saturn" data-celestial-icon="saturn" data-ring="layered" aria-hidden="true"></span>收藏 <span class="nav-en">Library</span></a>
+          <a href="#ideas" data-nav="ideas"><span class="celestial-icon" data-celestial-icon="neptune" aria-hidden="true"></span>随想 <span class="nav-en">Ideas</span></a>
+        </nav>
+        <div class="header-actions">
+          <button class="icon-button motion-toggle" type="button" aria-label="暂停星空动效" aria-pressed="false" title="暂停星空动效">
+            <svg class="pause-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 5v14M16 5v14"></path></svg>
+            <svg class="play-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m8 5 11 7-11 7Z"></path></svg>
+          </button>
+          <div class="time-control" role="group" aria-label="行星公转速度">
+            <button class="icon-button time-slower" type="button" aria-label="放慢行星公转" title="放慢行星公转">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M19 5 9 12l10 7V5Z"></path><path d="M5 5v14"></path></svg>
+            </button>
+            <button class="icon-button time-faster" type="button" aria-label="加快行星公转" title="加快行星公转">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m5 5 10 7L5 19V5Z"></path><path d="M19 5v14"></path></svg>
+            </button>
+            <span class="time-scale-readout">1×</span>
+          </div>
+          <button class="icon-button theme-toggle" type="button" aria-label="切换为浅色模式" title="切换为浅色模式">
+            <svg class="sun-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"></path></svg>
+            <svg class="moon-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.5 13.3A8.5 8.5 0 0 1 10.7 3.5a8.5 8.5 0 1 0 9.8 9.8Z"></path></svg>
+          </button>
+          <button class="icon-button menu-toggle" type="button" aria-label="打开导航" aria-expanded="false" aria-controls="mobile-nav">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 8h16M4 16h16"></path></svg>
+          </button>
+        </div>
+      </header>
+      <nav class="mobile-nav" id="mobile-nav" aria-label="移动端导航" hidden>
+        <a href="#home" data-nav="home"><span class="celestial-icon celestial-icon-sun" aria-hidden="true"></span>首页 <span>Home</span></a>
+        <a href="#about" data-nav="about"><span class="celestial-icon" data-celestial-icon="mercury" aria-hidden="true"></span>关于 <span>About</span></a>
+        <a href="#writing" data-nav="writing"><span class="celestial-icon" data-celestial-icon="moon" aria-hidden="true"></span>文字 <span>Writing</span></a>
+        <a href="#projects" data-nav="projects"><span class="celestial-icon" data-celestial-icon="earth" aria-hidden="true"></span>作品 <span>Projects</span></a>
+        <a href="#lab" data-nav="lab"><span class="celestial-icon" data-celestial-icon="mars" aria-hidden="true"></span>实验 <span>Lab</span></a>
+        <a href="#journey" data-nav="journey"><span class="celestial-icon" data-celestial-icon="jupiter" aria-hidden="true"></span>经历 <span>Journey</span></a>
+        <a href="#library" data-nav="library"><span class="celestial-icon celestial-icon-saturn" data-celestial-icon="saturn" data-ring="layered" aria-hidden="true"></span>收藏 <span>Library</span></a>
+        <a href="#ideas" data-nav="ideas"><span class="celestial-icon" data-celestial-icon="neptune" aria-hidden="true"></span>随想 <span>Ideas</span></a>
+      </nav>
+
+      <main id="main" tabindex="-1">
+        <section class="view home-view" data-view="home" aria-labelledby="home-title">
+          <div class="hero">
+            <canvas class="solar-system-3d" aria-hidden="true"></canvas>
+            <div class="hero-copy">
+              <p class="eyebrow"><span class="status-dot"></span><span data-profile="eyebrow">一块小小的互联网自留地</span></p>
+              <p class="terminal-command" aria-hidden="true"><span>~</span> / whoami <span class="terminal-cursor"></span></p>
+              <h1 id="home-title">你好，我是<br><span class="hero-name" data-profile="name">loren</span><span class="hero-period">.</span></h1>
+              <p class="hero-intro" data-profile="intro">写代码，做产品，记录有意思的想法。</p>
+              <p class="hero-description" data-profile="description">相信好的东西来自好奇心，也来自把一个小想法认真做完。这里是我的作品、文字，和一些尚未成形的灵感。</p>
+              <div class="hero-actions">
+                <a class="button button-primary" href="#projects">看看我的作品 <span aria-hidden="true">↗</span></a>
+                <a class="text-link" href="#contact">来打个招呼 <span aria-hidden="true">↗</span></a>
+              </div>
+              <div class="hero-footnote"><span class="tiny-cross" aria-hidden="true">+</span><span data-profile="note">保持好奇，持续创造。</span><span class="demo-marker" data-demo-label>内容示例</span></div>
+            </div>
+            <div class="universe" aria-label="探索 loren 的个人太阳系">
+              <div class="universe-coordinate coordinate-top" aria-hidden="true">LOREN'S SOLAR SYSTEM</div>
+              <div class="universe-coordinate coordinate-bottom" aria-hidden="true">RELATIVE DIAMETERS · COMPRESSED</div>
+              <div class="orbit orbit-one" aria-hidden="true"></div>
+              <div class="orbit orbit-two" aria-hidden="true"></div>
+              <div class="orbit orbit-three" aria-hidden="true"></div>
+              <div class="orbit orbit-four" aria-hidden="true"></div>
+              <div class="orbit orbit-five" aria-hidden="true"></div>
+              <div class="orbit orbit-six" aria-hidden="true"></div>
+              <div class="orbit orbit-seven" aria-hidden="true"></div>
+              <div class="orbit orbit-eight" aria-hidden="true"></div>
+              <a class="solar-center" data-body="sun" href="#home" aria-label="首页，太阳，直径 1,392,700 公里"><span class="solar-core" aria-hidden="true"><canvas class="solar-surface" width="320" height="320"></canvas><i class="solar-flare flare-one"></i><i class="solar-flare flare-two"></i></span><span>YOU ARE</span><strong>here.</strong><em>Sun ↗</em><small>Ø 1,392,700 km</small></a>
+              <a class="planet-link planet-about" data-orbit="one" data-body="mercury" href="#about" aria-label="关于，水星，直径 4,879 公里"><span class="planet planet-mercury" aria-hidden="true"><canvas class="planet-surface" data-world="mercury" width="112" height="112"></canvas></span><span class="planet-label">关于 <em>Mercury ↗</em><small>Ø 4,879 km</small></span></a>
+              <span class="decorative-world world-venus" data-orbit="two" data-body="venus" data-name="Venus" data-diameter="Ø 12,104 km"><canvas class="planet-surface" data-world="venus" width="96" height="96" aria-hidden="true"></canvas><span class="planet-label">金星 <em>Venus</em><small>Ø 12,104 km</small></span></span>
+              <a class="planet-link planet-writing" data-orbit="three" data-body="moon" href="#writing" aria-label="文字，月球，直径 3,475 公里"><span class="planet planet-moon" aria-hidden="true"><canvas class="planet-surface" data-world="moon" width="160" height="160"></canvas></span><span class="planet-label">文字 <em>Moon ↗</em><small>Ø 3,475 km</small></span></a>
+              <a class="planet-link planet-projects" data-orbit="three" data-body="earth" href="#projects" aria-label="作品，地球，直径 12,742 公里"><span class="planet planet-earth" aria-hidden="true"><canvas class="planet-surface" data-world="earth" width="256" height="256"></canvas></span><span class="planet-label">作品 <em>Earth ↗</em><small>Ø 12,742 km</small></span></a>
+              <a class="planet-link planet-lab" data-orbit="four" data-body="mars" href="#lab" aria-label="实验，火星，直径 6,779 公里"><span class="planet planet-mars" aria-hidden="true"><canvas class="planet-surface" data-world="mars" width="128" height="128"></canvas></span><span class="planet-label">实验 <em>Mars ↗</em><small>Ø 6,779 km</small></span></a>
+              <a class="planet-link planet-journey" data-orbit="five" data-body="jupiter" href="#journey" aria-label="经历，木星，直径 139,820 公里"><span class="planet planet-jupiter" aria-hidden="true"><canvas class="planet-surface" data-world="jupiter" width="192" height="192"></canvas></span><span class="planet-label">经历 <em>Jupiter ↗</em><small>Ø 139,820 km</small></span></a>
+              <a class="planet-link planet-library" data-orbit="six" data-body="saturn" href="#library" aria-label="收藏，土星，直径 116,460 公里"><span class="planet planet-saturn" data-ring="layered" aria-hidden="true"><canvas class="planet-surface" data-world="saturn" width="160" height="160"></canvas></span><span class="planet-label">收藏 <em>Saturn ↗</em><small>Ø 116,460 km</small></span></a>
+              <span class="decorative-world world-uranus" data-orbit="seven" data-body="uranus" data-name="Uranus" data-diameter="Ø 50,724 km"><canvas class="planet-surface" data-world="uranus" width="96" height="96" aria-hidden="true"></canvas><span class="planet-label">天王星 <em>Uranus</em><small>Ø 50,724 km</small></span></span>
+              <a class="planet-link planet-ideas" data-orbit="eight" data-body="neptune" href="#ideas" aria-label="随想，海王星，直径 49,244 公里"><span class="planet planet-neptune" aria-hidden="true"><canvas class="planet-surface" data-world="neptune" width="128" height="128"></canvas></span><span class="planet-label">随想 <em>Neptune ↗</em><small>Ø 49,244 km</small></span></a>
+              <span class="constellation-star star-a" aria-hidden="true">✦</span>
+              <span class="constellation-star star-b" aria-hidden="true">+</span>
+              <span class="constellation-star star-c" aria-hidden="true">+</span>
+              <span class="orbital-dot dot-a" aria-hidden="true"></span>
+              <span class="orbital-dot dot-b" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="home-bottom">
+            <section class="currently-block" aria-labelledby="currently-title">
+              <h2 class="section-kicker" id="currently-title"><span class="status-dot"></span>此刻 / NOW</h2>
+              <p data-profile="now">正在把脑海里的想法，变成可以被使用的小东西。</p>
+              <span class="muted-note" data-profile="nowNote">慢一点，也没关系。</span>
+            </section>
+            <section class="latest-block" aria-labelledby="latest-title">
+              <div class="section-heading"><h2 class="section-kicker" id="latest-title">最近写下 / LATEST NOTE</h2><a class="subtle-link" href="#writing">全部文字 ↗</a></div>
+              <a class="latest-note" id="latest-note" href="#writing"><span class="latest-note-title">给自己留一块互联网自留地</span><span class="latest-note-arrow" aria-hidden="true">↗</span></a>
+              <span class="muted-note" id="latest-note-meta">关于创造，也关于记录。</span>
+            </section>
+          </div>
+        </section>
+
+        <section class="view content-view" data-view="about" aria-labelledby="about-title" hidden>
+          <header class="page-heading"><p class="eyebrow">THE INNER ORBIT</p><h1 id="about-title">关于<span class="title-period">.</span></h1><p>一些构成我的兴趣、方法与方向。</p></header>
+          <div class="about-layout">
+            <div class="about-monogram" aria-hidden="true"><span>L</span><i></i></div>
+            <div id="about-content"></div>
+          </div>
+          <p class="page-endnote">认识一个人，需要比一段简介更久。<span data-demo-label>当前介绍为演示内容</span></p>
+        </section>
+
+        <section class="view content-view" data-view="writing" aria-labelledby="writing-title" hidden>
+          <header class="page-heading"><p class="eyebrow">WORDS & OBSERVATIONS</p><h1 id="writing-title">文字<span class="title-period">.</span></h1><p>把想明白的事写下来，也给还没想明白的事留个位置。</p></header>
+          <div class="list-toolbar">
+            <div class="filter-group" aria-label="文章分类" id="writing-filters"></div>
+            <label class="search-field"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="6"></circle><path d="m15 15 5 5"></path></svg><input id="writing-search" type="search" placeholder="搜索文字…" aria-label="搜索文章"></label>
+          </div>
+          <div class="writing-list" id="writing-list"></div>
+          <p class="empty-state" id="writing-empty" role="status" hidden>还没有找到相关文字。试试其他关键词，或选择「全部」。</p>
+          <p class="page-endnote">文字不必很多，真诚就好。<span data-demo-label>当前文章为演示内容</span></p>
+        </section>
+
+        <section class="view content-view" data-view="projects" aria-labelledby="projects-title" hidden>
+          <header class="page-heading"><p class="eyebrow">THINGS I MAKE</p><h1 id="projects-title">作品<span class="title-period">.</span></h1><p>一些出于好奇心的尝试，一些认真解决小问题的工具。</p></header>
+          <div class="list-toolbar"><div class="filter-group" aria-label="项目分类" id="project-filters"></div><span class="muted-note" id="project-count"></span></div>
+          <div class="project-grid" id="project-list"></div>
+          <p class="page-endnote">从一个小想法开始，做到能被打开。<span data-demo-label>当前项目为演示内容</span></p>
+        </section>
+
+        <section class="view content-view" data-view="lab" aria-labelledby="lab-title" hidden>
+          <header class="page-heading"><p class="eyebrow">EXPERIMENTS IN ORBIT</p><h1 id="lab-title">实验<span class="title-period">.</span></h1><p>还不一定是作品，但已经值得动手验证。</p></header>
+          <div class="experiment-grid" id="experiment-list"></div>
+          <p class="page-endnote">允许失败，也允许只学到一件小事。<span data-demo-label>当前实验为演示内容</span></p>
+        </section>
+
+        <section class="view content-view" data-view="journey" aria-labelledby="journey-title" hidden>
+          <header class="page-heading"><p class="eyebrow">A NONLINEAR PATH</p><h1 id="journey-title">经历<span class="title-period">.</span></h1><p>不是完整简历，而是一些改变方向的坐标。</p></header>
+          <div class="journey-list" id="journey-list"></div>
+          <p class="page-endnote">路径未必笔直，但每一步都算数。<span data-demo-label>当前经历为演示内容</span></p>
+        </section>
+
+        <section class="view content-view" data-view="library" aria-labelledby="library-title" hidden>
+          <header class="page-heading"><p class="eyebrow">THINGS WORTH KEEPING</p><h1 id="library-title">收藏<span class="title-period">.</span></h1><p>长期影响我的书、工具、声音和互联网角落。</p></header>
+          <div class="library-list" id="library-list"></div>
+          <p class="page-endnote">好的收藏不是囤积，而是不断返回。<span data-demo-label>当前收藏为演示内容</span></p>
+        </section>
+
+        <section class="view content-view" data-view="ideas" aria-labelledby="ideas-title" hidden>
+          <header class="page-heading"><p class="eyebrow">A DIGITAL GARDEN</p><h1 id="ideas-title">随想<span class="title-period">.</span></h1><p>允许想法不完整。那些还不能写成文章的碎片，先放在这里。</p></header>
+          <div class="ideas-list" id="ideas-list"></div>
+          <p class="page-endnote">想到什么，就记下来。<span data-demo-label>当前随想为演示内容</span></p>
+        </section>
+      </main>
+
+      <footer class="site-footer" id="contact">
+        <div class="contact-copy"><h2>很高兴在这里遇见你<span>.</span></h2><p>关于技术、想法，或者只是打个招呼。</p></div>
+        <div class="contact-actions" id="contact-actions"></div>
+        <div class="footer-bottom"><span>© <span id="year"></span> <span data-profile="name">loren</span></span><span>用好奇心建造 <span class="footer-star" aria-hidden="true">✳</span> 持续生长中</span><a href="#home">回到首页 ↑</a></div>
+      </footer>
+    </div>
+
+    <dialog class="reader-dialog" id="reader-dialog" aria-labelledby="reader-title">
+      <div class="reader-topbar"><span id="reader-kind">READING ROOM</span><button class="icon-button" id="reader-close" type="button" aria-label="关闭阅读窗口"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div>
+      <article class="reader-content"><p class="eyebrow" id="reader-meta"></p><h2 id="reader-title"></h2><div class="reader-body" id="reader-body"></div><div id="reader-links"></div></article>
+    </dialog>
+    <dialog class="contact-dialog" id="contact-dialog" aria-labelledby="contact-title">
+      <button class="icon-button contact-close" id="contact-close" type="button" aria-label="关闭联系方式"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button>
+      <p class="eyebrow">SAY HELLO</p><h2 id="contact-title">期待与你认识。</h2><p id="contact-message"></p><div id="contact-details"></div>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <noscript><div class="noscript-note">首页可以直接阅读。浏览作品、文章和随想需要在浏览器中启用 JavaScript。</div></noscript>
+  </body>
+</html>

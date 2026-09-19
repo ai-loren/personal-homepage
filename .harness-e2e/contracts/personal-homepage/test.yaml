@@ -1,0 +1,298 @@
+version: 1
+runtime:
+  engine: playwright
+  agent: playwright
+  timeoutMs: 60000
+environment:
+  targetUrl: http://127.0.0.1:4177
+  viewport:
+    width: 1280
+    height: 900
+cases:
+  - id: personal-space-visitor
+    entryCaseId: browse-personal-space
+    name: 浏览个人空间
+    steps:
+      - id: home-visible
+        action: assertVisible
+        target: '#home-title'
+        implements: [home-ready]
+      - id: wordmark-visible
+        action: assertVisible
+        target: '.wordmark'
+        implements: [typography-system]
+      - id: hero-name-visible
+        action: assertVisible
+        target: '.hero-name'
+        implements: [typography-system]
+      - id: home-sun-icon-visible
+        action: assertVisible
+        target: '.desktop-nav [data-nav="home"] .celestial-icon-sun'
+        implements: [home-ready]
+      - id: solar-canvas-visible
+        action: assertVisible
+        target: '.solar-surface[data-renderer="canvas"]'
+        implements: [solar-surface-detail]
+      - id: solar-english-visible
+        action: assertText
+        target: '.solar-center > em'
+        value: Sun ↗
+        implements: [solar-surface-detail]
+      - id: three-scene-ready
+        action: assertVisible
+        target: '.hero:has(.universe.three-ready[data-scene="three"]) .solar-system-3d'
+        implements: [three-dimensional-system]
+      - id: three-scene-fitted
+        action: assertVisible
+        target: '.hero:has(.universe.three-ready[data-scene="three"][data-layout="fitted"]) .solar-system-3d'
+        implements: [solar-system-fitted]
+      - id: solar-decor-ready
+        action: assertVisible
+        target: '.universe.three-ready[data-decor="belt-meteors"]'
+        implements: [solar-decor]
+      - id: three-earth-label-visible
+        action: assertVisible
+        target: '.universe.three-ready .planet-projects .planet-label'
+        implements: [three-dimensional-system]
+      - id: solar-diameter-hidden
+        action: assertHidden
+        target: '.solar-center small'
+      - id: hover-sun
+        action: hover
+        target: '.solar-center'
+      - id: solar-diameter-visible
+        action: assertVisible
+        target: '.solar-center small'
+        implements: [solar-surface-detail]
+      - id: earth-visible
+        action: assertVisible
+        target: 'canvas[data-world="earth"]'
+        implements: [celestial-navigation]
+      - id: moon-visible
+        action: assertVisible
+        target: 'canvas[data-world="moon"]'
+        implements: [celestial-navigation]
+      - id: planet-renderer-ready
+        action: assertVisible
+        target: 'canvas[data-world="earth"][data-renderer]'
+        implements: [celestial-navigation]
+      - id: neptune-visible
+        action: assertVisible
+        target: 'canvas[data-world="neptune"][data-renderer="canvas"]'
+        implements: [celestial-navigation]
+      - id: saturn-layered
+        action: assertVisible
+        target: '.planet-saturn[data-ring="layered"] canvas[data-world="saturn"]'
+        implements: [saturn-ring-layering]
+      - id: saturn-nav-layered
+        action: assertVisible
+        target: '.desktop-nav .celestial-icon-saturn[data-ring="layered"] canvas'
+        implements: [saturn-ring-layering]
+      - id: earth-diameter-hidden
+        action: assertHidden
+        target: '.planet-projects .planet-label small'
+      - id: hover-earth
+        action: hover
+        target: '.planet-projects'
+      - id: earth-orbit-active
+        action: assertVisible
+        target: '.universe[data-active-body="earth"][data-active-orbit="three"]'
+        implements: [planet-hover-focus]
+      - id: earth-diameter-visible
+        action: assertVisible
+        target: '.planet-projects .planet-label small'
+        implements: [planet-hover-focus]
+      - id: nav-earth-visible
+        action: assertVisible
+        target: '.desktop-nav [data-celestial-icon="earth"] canvas'
+        implements: [celestial-navigation]
+      - id: pause-motion
+        action: click
+        target: '.motion-toggle'
+      - id: paused-visible
+        action: assertVisible
+        target: 'html[data-cosmic-motion="paused"] .motion-toggle[aria-pressed="true"]'
+        implements: [motion-control]
+      - id: resume-motion
+        action: click
+        target: '.motion-toggle'
+      - id: playing-visible
+        action: assertVisible
+        target: 'html[data-cosmic-motion="playing"] .motion-toggle[aria-pressed="false"]'
+        implements: [motion-control]
+      - id: time-control-visible
+        action: assertVisible
+        target: '.time-control .time-faster'
+        implements: [orbital-time-control]
+      - id: speed-up-time
+        action: click
+        target: '.time-faster'
+      - id: time-scale-faster
+        action: assertText
+        target: '.time-scale-readout'
+        value: 2×
+        implements: [orbital-time-control]
+      - id: slow-down-time
+        action: click
+        target: '.time-slower'
+      - id: time-scale-restored
+        action: assertVisible
+        target: 'html[data-time-scale="1"] .time-control'
+        implements: [orbital-time-control]
+      - id: navigate-earth
+        action: click
+        target: '.planet-projects'
+      - id: earth-opens-projects
+        action: assertVisible
+        target: '#projects-title'
+        implements: [celestial-navigation]
+      - id: projects-scene-visible
+        action: assertVisible
+        target: 'html[data-page="projects"] #page-art[data-scene="projects"]'
+        implements: [section-background-scenes]
+      - id: open-about
+        action: click
+        target: '.desktop-nav [data-nav="about"]'
+      - id: about-visible
+        action: assertVisible
+        target: '#about-content .about-facts'
+        implements: [expanded-sections]
+      - id: about-scene-visible
+        action: assertVisible
+        target: 'html[data-page="about"] #page-art[data-scene="about"]'
+        implements: [section-background-scenes]
+      - id: open-lab
+        action: click
+        target: '.desktop-nav [data-nav="lab"]'
+      - id: lab-visible
+        action: assertVisible
+        target: '#experiment-list .experiment-card:first-child'
+        implements: [expanded-sections]
+      - id: lab-scene-visible
+        action: assertVisible
+        target: 'html[data-page="lab"] #page-art[data-scene="lab"]'
+        implements: [section-background-scenes]
+      - id: open-journey
+        action: click
+        target: '.desktop-nav [data-nav="journey"]'
+      - id: journey-visible
+        action: assertVisible
+        target: '#journey-list .journey-item:first-child'
+        implements: [expanded-sections]
+      - id: journey-scene-visible
+        action: assertVisible
+        target: 'html[data-page="journey"] #page-art[data-scene="journey"]'
+        implements: [section-background-scenes]
+      - id: open-library
+        action: click
+        target: '.desktop-nav [data-nav="library"]'
+      - id: library-visible
+        action: assertVisible
+        target: '#library-list .library-item:first-child'
+        implements: [expanded-sections]
+      - id: library-scene-visible
+        action: assertVisible
+        target: 'html[data-page="library"] #page-art[data-scene="library"]'
+        implements: [section-background-scenes]
+      - id: open-ideas-before-writing
+        action: click
+        target: '.desktop-nav [data-nav="ideas"]'
+      - id: expanded-ideas-visible
+        action: assertVisible
+        target: '.idea-item:first-child'
+        implements: [expanded-sections]
+      - id: ideas-scene-visible
+        action: assertVisible
+        target: 'html[data-page="ideas"] #page-art[data-scene="ideas"]'
+        implements: [section-background-scenes]
+      - id: open-writing
+        action: click
+        target: '.desktop-nav [data-nav="writing"]'
+      - id: writing-scene-visible
+        action: assertVisible
+        target: 'html[data-page="writing"] #page-art[data-scene="writing"]'
+        implements: [section-background-scenes]
+      - id: search-writing
+        action: fill
+        target: '#writing-search'
+        value: 自留地
+      - id: match-visible
+        action: assertVisible
+        target: '.writing-item[href="#writing/a-place-of-my-own"]'
+        implements: [search-matches]
+      - id: open-article
+        action: click
+        target: '.writing-item[href="#writing/a-place-of-my-own"]'
+      - id: article-body-visible
+        action: assertVisible
+        target: '#reader-body blockquote'
+        implements: [article-readable]
+      - id: dismiss-article
+        action: press
+        target: '#reader-close'
+        value: Escape
+      - id: reader-closed
+        action: assertHidden
+        target: '#reader-dialog'
+        implements: [article-readable]
+      - id: unmatched-query
+        action: fill
+        target: '#writing-search'
+        value: no-matching-article-xyz
+      - id: empty-visible
+        action: assertVisible
+        target: '#writing-empty'
+        implements: [empty-search]
+      - id: open-projects
+        action: click
+        target: '.desktop-nav [data-nav="projects"]'
+      - id: select-tools
+        action: click
+        target: '#project-filters [data-category="工具"]'
+      - id: tool-count
+        action: assertText
+        target: '#project-count'
+        value: 2 个作品
+        implements: [filtered-projects]
+      - id: website-excluded
+        action: assertHidden
+        target: '.project-card[href="#projects/personal-space"]'
+        implements: [filtered-projects]
+      - id: open-project-detail
+        action: click
+        target: '.project-card[href="#projects/a-moment"]'
+      - id: project-demo-visible
+        action: assertText
+        target: '#reader-body p'
+        options:
+          text: 这是一个项目展示示例，用来演示如何介绍尚在构思中的作品。此处没有可运行的计时器。
+        value: 这是一个项目展示示例，用来演示如何介绍尚在构思中的作品。此处没有可运行的计时器。
+        implements: [project-readable]
+      - id: close-project
+        action: click
+        target: '#reader-close'
+      - id: open-ideas
+        action: click
+        target: '.desktop-nav [data-nav="ideas"]'
+      - id: idea-visible
+        action: assertVisible
+        target: '.idea-item:first-child .idea-content'
+        implements: [ideas-readable]
+      - id: toggle-theme
+        action: click
+        target: '.theme-toggle'
+      - id: light-theme-active
+        action: assertVisible
+        target: '.theme-toggle[aria-label="切换为深色模式"]'
+        implements: [theme-switch]
+      - id: restore-theme
+        action: click
+        target: '.theme-toggle'
+      - id: open-contact
+        action: click
+        target: '#contact-open'
+      - id: contact-empty
+        action: assertText
+        target: '#contact-message'
+        value: 这是个人主页演示，暂未提供联系方式。
+        implements: [honest-contact]
