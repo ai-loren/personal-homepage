@@ -191,34 +191,81 @@
     context.fillStyle = wash;
     context.fillRect(0, 0, width, height);
 
-    const cloud = context.createRadialGradient(
-      width * (.8 + pointerX * .008),
-      height * (.42 + pointerY * .008),
-      0,
-      width * .82,
-      height * .45,
-      Math.max(width, height) * .56,
-    );
-    cloud.addColorStop(0, rgba(scene.tint, lightTheme ? .08 : .13));
-    cloud.addColorStop(.38, rgba(scene.tint, lightTheme ? .035 : .055));
-    cloud.addColorStop(1, 'rgba(0,0,0,0)');
-    context.fillStyle = cloud;
-    context.fillRect(0, 0, width, height);
-
     const random = randomFor(scene.starSeed);
-    const starCount = Math.min(560, Math.round(width * height / 3400));
+
+    // 两团错位星云：主色浓、辉光色淡，用 screen 叠加出体积感。
+    const nebulae = [
+      { hex: scene.tint, cx: .82, cy: .44, spread: .58, alpha: lightTheme ? .08 : .16 },
+      { hex: scene.glow, cx: .64 + random() * .12, cy: .3 + random() * .16, spread: .4, alpha: lightTheme ? .05 : .1 },
+    ];
+    for (const nebula of nebulae) {
+      const cloud = context.createRadialGradient(
+        width * (nebula.cx + pointerX * .008),
+        height * (nebula.cy + pointerY * .008),
+        0,
+        width * nebula.cx,
+        height * nebula.cy,
+        Math.max(width, height) * nebula.spread,
+      );
+      cloud.addColorStop(0, rgba(nebula.hex, nebula.alpha));
+      cloud.addColorStop(.4, rgba(nebula.hex, nebula.alpha * .45));
+      cloud.addColorStop(1, 'rgba(0,0,0,0)');
+      context.globalCompositeOperation = lightTheme ? 'multiply' : 'screen';
+      context.fillStyle = cloud;
+      context.fillRect(0, 0, width, height);
+    }
+    context.globalCompositeOperation = 'source-over';
+
+    // 远景尘埃层：大量极小暗星，营造深度。
+    const dustCount = Math.min(720, Math.round(width * height / 2600));
+    for (let index = 0; index < dustCount; index++) {
+      const x = (random() * width + pointerX * 3 + width) % width;
+      const y = (random() * height + pointerY * 2 + height) % height;
+      context.globalAlpha = (lightTheme ? .05 : .1) + random() * (lightTheme ? .08 : .22);
+      context.fillStyle = random() > .8 ? '#ecd6ae' : '#c3d2e6';
+      context.beginPath();
+      context.arc(x, y, .2 + random() * .5, 0, tau);
+      context.fill();
+    }
+
+    // 近景亮星层：更亮更大，少量特亮星带十字光芒。
+    const starCount = Math.min(320, Math.round(width * height / 5200));
     for (let index = 0; index < starCount; index++) {
       const depth = .3 + random() * .7;
       const x = (random() * width + pointerX * 7 * depth + width) % width;
       const y = (random() * height + pointerY * 5 * depth + height) % height;
-      const radius = .25 + random() * (random() > .965 ? 1.8 : .75);
-      const warm = random() > .82;
-      context.globalAlpha = (lightTheme ? .09 : .16) + random() * (lightTheme ? .2 : .48);
-      context.fillStyle = warm ? '#ecd6ae' : '#d9e5f2';
+      const flare = random() > .955;
+      const radius = flare ? 1.4 + random() * 1.4 : .3 + random() * .85;
+      const warm = random() > .8;
+      const color = warm ? '#f2ddb2' : '#dbe7f4';
+      const alpha = (lightTheme ? .12 : .22) + random() * (lightTheme ? .22 : .5);
+      if (flare) {
+        const glow = context.createRadialGradient(x, y, 0, x, y, radius * 4.2);
+        glow.addColorStop(0, rgba(warm ? '#fff0d0' : '#eef5ff', alpha * .9));
+        glow.addColorStop(1, 'rgba(0,0,0,0)');
+        context.globalAlpha = 1;
+        context.fillStyle = glow;
+        context.beginPath();
+        context.arc(x, y, radius * 4.2, 0, tau);
+        context.fill();
+        context.globalAlpha = alpha * .6;
+        context.strokeStyle = color;
+        context.lineWidth = .6;
+        const spike = radius * 3.4;
+        context.beginPath();
+        context.moveTo(x - spike, y);
+        context.lineTo(x + spike, y);
+        context.moveTo(x, y - spike);
+        context.lineTo(x, y + spike);
+        context.stroke();
+      }
+      context.globalAlpha = alpha;
+      context.fillStyle = color;
       context.beginPath();
       context.arc(x, y, radius, 0, tau);
       context.fill();
     }
+    context.globalAlpha = 1;
 
     context.globalCompositeOperation = lightTheme ? 'multiply' : 'screen';
     context.translate(width * .56 + pointerX * 6, height * .58 + pointerY * 4);
