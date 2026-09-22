@@ -542,7 +542,7 @@ cases:
         target: '.theme-toggle'
       - id: footer-github-link-visible
         action: assertVisible
-        target: '#contact-actions .github-link[href="https://github.com/Jeff-Zzh"][target="_blank"][rel~="noopener"]'
+        target: '#contact-actions .github-link[href="https://github.com/ai-loren"][target="_blank"][rel~="noopener"]'
         implements: [github-profile-link]
       - id: open-contact
         action: click
@@ -554,7 +554,7 @@ cases:
         implements: [honest-contact]
       - id: dialog-github-link-visible
         action: assertVisible
-        target: '#contact-details .github-link[href="https://github.com/Jeff-Zzh"][target="_blank"][rel~="noopener"]'
+        target: '#contact-details .github-link[href="https://github.com/ai-loren"][target="_blank"][rel~="noopener"]'
         implements: [github-profile-link]
       - id: progressive-textures-complete
         action: assertVisible

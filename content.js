@@ -13,7 +13,7 @@ window.SITE_CONTENT = {
     now: '正在把脑海里的想法，变成可以被使用的小东西。',
     nowNote: '慢一点，也没关系。',
     email: '',
-    github: 'https://github.com/Jeff-Zzh',
+    github: 'https://github.com/ai-loren',
     demo: true,
   },
   about: {

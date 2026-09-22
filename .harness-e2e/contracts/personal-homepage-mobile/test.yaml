@@ -150,5 +150,5 @@ cases:
         target: '#contact-open'
       - id: mobile-contact-github-visible
         action: assertVisible
-        target: '.contact-dialog[open] .github-link[href="https://github.com/Jeff-Zzh"]'
+        target: '.contact-dialog[open] .github-link[href="https://github.com/ai-loren"]'
         implements: [mobile-contact-accessible]

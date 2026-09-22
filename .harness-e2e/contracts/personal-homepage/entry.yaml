@@ -127,4 +127,4 @@ cases:
         description: 未公开邮箱时明确说明现状，并引导访客通过 GitHub 了解项目与动态。
       - id: github-profile-link
         type: visible
-        description: 页脚联系区域与联系方式弹窗均提供带 GitHub 图标的个人主页链接，地址为 https://github.com/Jeff-Zzh，并在新标签页安全打开。
+        description: 页脚联系区域与联系方式弹窗均提供带 GitHub 图标的个人主页链接，地址为 https://github.com/ai-loren，并在新标签页安全打开。
