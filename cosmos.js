@@ -257,11 +257,16 @@
           const polar = clamp((Math.abs(latitude) - 72) / 10);
           color = [128 + fine * 57 - broad * 18 + rock, 56 + fine * 35 - broad * 12 + rock * .7, 32 + fine * 24 - broad * 8 + rock * .5];
           color = color.map((channel) => mix(channel, 207, polar));
+        } else if (kind === 'mercury') {
+          const broad = terrain(x / 118, y / 92);
+          const rock = (terrainHi(x / 6.5, y / 6.5) - .5) * 44;
+          const basin = clamp((.5 - terrain(x / 58, y / 46)) * 2.6);
+          const shade = 152 + fine * 58 - clamp((.52 - broad) * 4) * 64 + rock;
+          color = [shade * 1.1 - basin * 26, shade * .92 - basin * 22, shade * .72 - basin * 17];
         } else {
           const broad = terrain(x / 122, y / 96);
-          const rock = (terrainHi(x / 7, y / 7) - .5) * (kind === 'mercury' ? 40 : 34);
-          const base = kind === 'mercury' ? 116 : 148;
-          const shade = base + fine * 62 - clamp((.52 - broad) * 4) * (kind === 'mercury' ? 72 : 100) + rock;
+          const rock = (terrainHi(x / 7, y / 7) - .5) * 34;
+          const shade = 148 + fine * 62 - clamp((.52 - broad) * 4) * 100 + rock;
           color = [shade * 1.03, shade * 1.015, shade * .97];
         }
         image.data[offset] = color[0];
@@ -282,9 +287,9 @@
         context.translate(x, y);
         context.scale(1, .82);
         const crater = context.createRadialGradient(-radius * .24, -radius * .3, 0, 0, 0, radius);
-        const craterShadow = kind === 'mars' ? 'rgba(57, 25, 18, .25)' : 'rgba(50, 50, 48, .34)';
-        const craterFloor = kind === 'mars' ? 'rgba(86, 37, 22, .18)' : 'rgba(64, 63, 59, .22)';
-        const craterRim = kind === 'mars' ? 'rgba(213, 112, 68, .25)' : 'rgba(224, 220, 207, .4)';
+        const craterShadow = kind === 'mars' ? 'rgba(57, 25, 18, .25)' : kind === 'mercury' ? 'rgba(74, 52, 30, .3)' : 'rgba(50, 50, 48, .34)';
+        const craterFloor = kind === 'mars' ? 'rgba(86, 37, 22, .18)' : kind === 'mercury' ? 'rgba(120, 92, 54, .2)' : 'rgba(64, 63, 59, .22)';
+        const craterRim = kind === 'mars' ? 'rgba(213, 112, 68, .25)' : kind === 'mercury' ? 'rgba(226, 196, 142, .38)' : 'rgba(224, 220, 207, .4)';
         crater.addColorStop(0, craterShadow);
         crater.addColorStop(.63, craterFloor);
         crater.addColorStop(.83, craterRim);

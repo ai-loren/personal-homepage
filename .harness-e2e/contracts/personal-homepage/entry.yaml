@@ -14,6 +14,27 @@ cases:
       - id: home-ready
         type: visible
         description: 首页显示自我介绍、作品入口和太阳导航图标。
+      - id: galaxy-browser-title
+        type: visible
+        description: 浏览器标签页在首页、栏目页和详情页始终显示 Loren's Galaxy。
+      - id: saturn-browser-icon
+        type: visible
+        description: 浏览器标签页使用用户最新提供的橙色土星图片作为透明背景 PNG favicon。
+      - id: home-portrait
+        type: visible
+        description: 首页自我介绍标题左侧显示用户提供的竖幅个人照片，使用与宇宙主题一致的金色细框，并在桌面和移动端保持完整可见。
+      - id: home-education-summary
+        type: visible
+        description: 首页个人简介区显示西安电子科技大学官方校徽，以及硕士计算机技术和本科软件工程的学历摘要。
+      - id: professional-profile
+        type: visible
+        description: 首页和关于页均准确显示当前职位 Bytedance Seed AI Infra Engineer，以及所在地区中国上海市。
+      - id: home-location-bilingual
+        type: visible
+        description: 首页 BASE 信息块在中文“中国 上海市”下方显示英文“CHINA · SHANGHAI”，两行层级清晰且不挤压布局。
+      - id: hero-footnote-quotes
+        type: visible
+        description: 首页 hero 底部脚注显示两行格言，第一行为“保持好奇，持续创造。”，第二行为“Carpe diem · 此心安处是吾乡。”。
       - id: typography-system
         type: visible
         description: 首页品牌字、中文展示标题和正文使用明确分层的字体体系。
@@ -26,6 +47,15 @@ cases:
       - id: planet-hover-focus
         type: visible
         description: 悬停地球时对应轨道高亮，并显示实际直径信息。
+      - id: planet-hover-release
+        type: interactive
+        description: 鼠标离开星球且未前往飞碟灯光控制台时，星球聚焦、飞碟和控制台应迅速退出并恢复太阳系全景。
+      - id: ufo-hover-lighting
+        type: visible
+        description: 悬停行星时显示紧凑、低亮度的 Q 版外星人飞碟，飞碟保持在画面安全区且不遮挡视觉中心；光照集中在星球表面，使被聚焦星球明显亮于飞碟。
+      - id: ufo-light-controls
+        type: interactive
+        description: 飞碟出现时显示灯光控制台，可调节光照强度，并在月光白、冰川蓝、极光青、离子绿、星云紫、玫瑰粉、日珥橙和暖星白之间切换。
       - id: solar-surface-detail
         type: visible
         description: 太阳使用独立表面画布，并固定显示 Sun 英文标签；悬停后显示实际直径。
@@ -38,9 +68,21 @@ cases:
       - id: expanded-sections
         type: visible
         description: 关于、实验、经历、收藏和随想标签均能打开对应内容。
+      - id: education-profile
+        type: visible
+        description: 经历页完整显示西安电子科技大学的硕士与本科学历、专业和起止月份，并在两条教育时间轴的左侧分别显示官方校徽。
+      - id: work-experience-profile
+        type: visible
+        description: 经历页完整显示字节跳动工作经历，包括上海现场办公信息、Seed AI Infra Engineer 与 Ads Infra Engineer 任职时间、职责方向及截图中明确列出的技能。
+      - id: work-experience-icons
+        type: visible
+        description: 字节跳动公司标题使用用户提供的 ByteDance 图标；Seed 与 Ads 两段岗位分别使用用户提供的 ByteDance Seed 和巨量引擎图标，并将岗位图标放在时间轴左栏。
       - id: section-background-scenes
         type: visible
-        description: 每个栏目切换到与栏目语义匹配的独立 Canvas 背景场景。
+        description: 七个栏目分别显示水星、月球、地球、火星、木星、土星和海王星的写实深空背景，不再出现抽象涂鸦、几何图案或手绘线条。
+      - id: project-orbital-satellites
+        type: visible
+        description: 作品页的地球背景周围显示三颗造型不同的人造卫星及三条独立轨道，卫星缓慢运行且不遮挡标题、筛选器和作品卡片。
       - id: motion-control
         type: visible
         description: 动效可以暂停和恢复，按钮与页面状态一致。
@@ -73,4 +115,7 @@ cases:
         description: 切换主题后出现切回深色模式的按钮。
       - id: honest-contact
         type: visible
-        description: 未配置邮箱时明确提示尚未提供联系方式。
+        description: 未公开邮箱时明确说明现状，并引导访客通过 GitHub 了解项目与动态。
+      - id: github-profile-link
+        type: visible
+        description: 页脚联系区域与联系方式弹窗均提供带 GitHub 图标的个人主页链接，地址为 https://github.com/Jeff-Zzh，并在新标签页安全打开。

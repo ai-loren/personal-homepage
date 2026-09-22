@@ -1,7 +1,17 @@
 (() => {
   'use strict';
 
-  const { profile, about, experiments, journey, library, articles, projects, ideas } = window.SITE_CONTENT;
+  const {
+    profile,
+    about,
+    experiments,
+    experience = [],
+    journey,
+    library,
+    articles,
+    projects,
+    ideas,
+  } = window.SITE_CONTENT;
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (character) => ({
@@ -44,6 +54,17 @@
     node.textContent = profile[node.dataset.profile] ?? '';
   });
   $('[data-site-name]').innerHTML = `${escapeHTML(profile.name)}<span>.</span>`;
+  const educationEntries = journey.filter((entry) => entry.degree && entry.major);
+  const heroEducation = $('.hero-education');
+  if (heroEducation && educationEntries.length) {
+    const schools = [...new Set(educationEntries.map((entry) => entry.title))];
+    const summary = educationEntries.map((entry) => `${entry.degree} · ${entry.major}`).join(' ／ ');
+    $('.hero-education-school').textContent = schools.join(' ／ ');
+    $('.hero-education-meta').textContent = summary;
+    heroEducation.setAttribute('aria-label', `查看教育经历：${schools.join('、')}，${summary}`);
+  } else if (heroEducation) {
+    heroEducation.hidden = true;
+  }
   $('#year').textContent = new Date().getFullYear();
   $$('[data-demo-label]').forEach((node) => { node.hidden = !profile.demo; });
   if (articles.length) {
@@ -135,7 +156,7 @@
       <p class="about-lead">${escapeHTML(about.lead)}</p>
       <div class="about-copy">${about.paragraphs.map((paragraph) => `<p>${escapeHTML(paragraph)}</p>`).join('')}</div>
       <dl class="about-facts">${about.facts.map((fact) => `
-        <div><dt>${escapeHTML(fact.label)}</dt><dd>${escapeHTML(fact.value)}</dd></div>
+        <div><dt>${escapeHTML(fact.label)}</dt><dd${fact.profile ? ` data-profile-field="${escapeHTML(fact.profile)}"` : ''}>${escapeHTML(fact.profile ? profile[fact.profile] : fact.value)}</dd></div>
       `).join('')}</dl>`;
   }
 
@@ -169,10 +190,96 @@
     if (!experiments.length) $('#experiment-list').innerHTML = '<p class="empty-state">新的实验正在形成。</p>';
   }
 
+  function parseYearMonth(value) {
+    const [year, month] = value.split('-').map(Number);
+    return { year, month };
+  }
+
+  function formatYearMonth(value) {
+    return value.replace('-', '.');
+  }
+
+  function formatDuration(start, end) {
+    const startDate = parseYearMonth(start);
+    const now = new Date();
+    const endDate = end
+      ? parseYearMonth(end)
+      : { year: now.getFullYear(), month: now.getMonth() + 1 };
+    const totalMonths = Math.max(
+      1,
+      (endDate.year - startDate.year) * 12 + endDate.month - startDate.month + 1,
+    );
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    return [
+      years ? `${years} 年` : '',
+      months ? `${months} 个月` : '',
+    ].filter(Boolean).join(' ');
+  }
+
+  function renderExperience() {
+    $('#work-experience-list').innerHTML = experience.map((company) => {
+      const latestEnd = company.roles.some((role) => role.current)
+        ? null
+        : company.roles.map((role) => role.end).filter(Boolean).sort().at(-1);
+      const companyPeriod = `${formatYearMonth(company.start)} — ${latestEnd ? formatYearMonth(latestEnd) : '至今'}`;
+      return `
+        <article class="experience-company" data-company="${escapeHTML(company.company)}">
+          <header class="experience-company-header">
+            <div class="experience-company-identity">
+              <span class="experience-company-logo">
+                <img src="${escapeHTML(company.logo)}" alt="${escapeHTML(company.logoAlt)}" width="560" height="97">
+              </span>
+              <div>
+                <span class="experience-company-label">COMPANY / 工作单位</span>
+                <h2>${escapeHTML(company.company)}</h2>
+                <p>${escapeHTML(company.employmentType)} · ${escapeHTML(companyPeriod)} · ${escapeHTML(formatDuration(company.start, latestEnd))}</p>
+              </div>
+            </div>
+            <p class="experience-location">${escapeHTML(company.location)}<span aria-hidden="true">·</span>${escapeHTML(company.workMode)}</p>
+          </header>
+          <div class="experience-roles">${company.roles.map((role) => {
+            const period = `${formatYearMonth(role.start)} — ${role.current ? '至今' : formatYearMonth(role.end)}`;
+            return `
+              <section class="journey-item journey-item-work experience-role" data-role="${escapeHTML(role.title)}">
+                <div class="journey-aside">
+                  <div class="journey-period">${escapeHTML(period)}<small>${escapeHTML(formatDuration(role.start, role.current ? null : role.end))}</small></div>
+                  <span class="experience-role-logo experience-role-logo-${escapeHTML(role.logoKind)}">
+                    <img src="${escapeHTML(role.logo)}" alt="${escapeHTML(role.logoAlt)}">
+                  </span>
+                </div>
+                <div>
+                  <div class="journey-kicker">
+                    <span>PROFESSIONAL ORBIT</span>
+                    ${role.current ? '<span class="journey-degree">当前</span>' : ''}
+                  </div>
+                  <h3>${escapeHTML(role.title)}</h3>
+                  <ul class="experience-highlights">${role.highlights.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>
+                  <div class="experience-skills" aria-label="相关技能">${role.skills.map((skill) => `<span>${escapeHTML(skill)}</span>`).join('')}</div>
+                </div>
+              </section>`;
+          }).join('')}</div>
+        </article>`;
+    }).join('');
+  }
+
   function renderJourney() {
     $('#journey-list').innerHTML = journey.map((entry) => `
-      <article class="journey-item"><div class="journey-period">${escapeHTML(entry.period)}</div>
-      <div><h2>${escapeHTML(entry.title)}</h2><p>${escapeHTML(entry.description)}</p></div></article>`).join('');
+      <article class="journey-item journey-item-education" data-degree="${escapeHTML(entry.degree)}"
+        aria-label="${escapeHTML(`${entry.title}，${entry.degree}，${entry.major}，${entry.period}`)}">
+        <div class="journey-aside">
+          <div class="journey-period">${escapeHTML(entry.period)}</div>
+          <span class="journey-emblem">
+            <img src="./assets/xidian-university-emblem.png" width="267" height="267"
+              alt="西安电子科技大学校徽">
+          </span>
+        </div>
+        <div>
+          <div class="journey-kicker"><span>ACADEMIC ORBIT</span><span class="journey-degree">${escapeHTML(entry.degree)}</span></div>
+          <h2>${escapeHTML(entry.title)}</h2>
+          <p class="journey-major"><span>专业</span>${escapeHTML(entry.major)}</p>
+        </div>
+      </article>`).join('');
   }
 
   function renderLibrary() {
@@ -214,7 +321,7 @@
       `<a class="button" href="${escapeHTML(link.url)}" target="_blank" rel="noopener noreferrer">${link.text}</a>`
     ).join('');
     activeDetail = { page, hash: location.hash };
-    document.title = `${item.title || item.name} — ${profile.name}`;
+    document.title = profile.siteTitle;
     if (contact.open) contact.close();
     if (!reader.open) reader.showModal();
     reader.scrollTop = 0;
@@ -242,7 +349,7 @@
       else node.removeAttribute('aria-current');
     });
     closeMenu();
-    document.title = page === 'home' ? profile.siteTitle : `${pageNames[page]} — ${profile.name}`;
+    document.title = profile.siteTitle;
     const collection = page === 'writing' ? articles : projects;
     const item = ['writing', 'projects'].includes(page) && parts[1] && collection.find((entry) => entry.id === parts.slice(1).join('/'));
     if (item) {
@@ -263,7 +370,7 @@
   reader.addEventListener('close', () => {
     if (activeDetail && location.hash === activeDetail.hash) {
       history.replaceState(null, '', `#${activeDetail.page}`);
-      document.title = `${pageNames[activeDetail.page]} — ${profile.name}`;
+      document.title = profile.siteTitle;
     }
     activeDetail = null;
     syncModalLock();
@@ -277,16 +384,21 @@
   }
 
   const githubURL = safeURL(profile.github);
-  $('#contact-actions').innerHTML = `${githubURL ? `<a class="contact-button" href="${escapeHTML(githubURL)}" target="_blank" rel="noopener noreferrer">${icons.github} GitHub ↗</a>` : ''}
+  const githubLink = githubURL
+    ? `<a class="contact-button github-link" href="${escapeHTML(githubURL)}" target="_blank" rel="noopener noreferrer" aria-label="访问 Loren 的 GitHub 主页">${icons.github} GitHub ↗</a>`
+    : '';
+  $('#contact-actions').innerHTML = `${githubLink}
     <button class="contact-button" id="contact-open" type="button">${icons.mail} 联系我 <span aria-hidden="true">↗</span></button>`;
   $('#contact-open').addEventListener('click', () => {
     const email = profile.email.trim();
     $('#contact-message').textContent = email
       ? '欢迎写信给我，分享你的想法。'
-      : '这是个人主页演示，暂未提供联系方式。';
+      : githubURL
+        ? '暂未公开邮箱，你可以通过 GitHub 了解我的项目与动态。'
+        : '这是个人主页演示，暂未提供联系方式。';
     $('#contact-details').innerHTML = email
       ? `<a class="email-address" href="mailto:${encodeURIComponent(email)}">${escapeHTML(email)}</a><button class="contact-button" id="copy-email" type="button">复制邮箱</button><span class="muted-note" id="copy-status" role="status"></span>`
-      : '';
+      : githubLink;
     contact.showModal();
     syncModalLock();
     $('#copy-email')?.addEventListener('click', async () => {
@@ -320,6 +432,7 @@
   renderArticles();
   renderProjects();
   renderExperiments();
+  renderExperience();
   renderJourney();
   renderLibrary();
   renderIdeas();

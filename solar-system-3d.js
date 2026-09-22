@@ -415,36 +415,203 @@
   const ufo = new THREE.Group();
   ufo.visible = false;
   scene.add(ufo);
-  const craft = new THREE.Group(); // 只缩放碟身，光束/聚光灯用世界尺寸单独算
+  const craft = new THREE.Group(); // 只缩放飞碟，光束与聚光灯使用世界尺寸单独计算
   ufo.add(craft);
+  const spinningHull = new THREE.Group();
+  craft.add(spinningHull);
 
   const saucerProfile = [
-    [0, .34], [.26, .22], [.46, .14], [1, 0], [.46, -.11], [.16, -.15], [0, -.16],
+    [0, .2], [.3, .18], [.62, .13], [1, 0], [.72, -.16], [.3, -.24], [0, -.25],
   ].map(([x, y]) => new THREE.Vector2(x, y));
   const saucer = new THREE.Mesh(
     new THREE.LatheGeometry(saucerProfile, 44),
-    new THREE.MeshStandardMaterial({ color: 0x93a7bd, metalness: .82, roughness: .32, emissive: 0x1b2f42, emissiveIntensity: .7, transparent: true, opacity: 1 }),
+    new THREE.MeshStandardMaterial({
+      color: 0x71889a, metalness: .72, roughness: .3,
+      emissive: 0x102b3c, emissiveIntensity: .18, transparent: true, opacity: 1,
+    }),
   );
-  craft.add(saucer);
+  spinningHull.add(saucer);
+
+  const cabinFloor = new THREE.Mesh(
+    new THREE.CylinderGeometry(.36, .48, .09, 40),
+    new THREE.MeshStandardMaterial({ color: 0x1d3143, metalness: .72, roughness: .34, emissive: 0x091a29, emissiveIntensity: .16 }),
+  );
+  cabinFloor.position.y = .11;
+  craft.add(cabinFloor);
+
+  const alienPilot = new THREE.Group();
+  alienPilot.position.y = .13;
+  craft.add(alienPilot);
+  const alienSkin = new THREE.MeshStandardMaterial({
+    color: 0x72cf8d, roughness: .56, metalness: 0,
+    emissive: 0x163b27, emissiveIntensity: .05,
+  });
+  const alienBody = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), alienSkin);
+  alienBody.scale.set(.14, .17, .1);
+  alienBody.position.y = -.1;
+  alienPilot.add(alienBody);
+  const alienBelly = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 22, 16),
+    new THREE.MeshStandardMaterial({ color: 0xc8efd0, roughness: .62, emissive: 0x294f34, emissiveIntensity: .03 }),
+  );
+  alienBelly.scale.set(.09, .11, .028);
+  alienBelly.position.set(0, -.09, .098);
+  alienPilot.add(alienBelly);
+  const alienHead = new THREE.Mesh(new THREE.SphereGeometry(1, 36, 26), alienSkin);
+  alienHead.scale.set(.24, .27, .2);
+  alienHead.position.y = .14;
+  alienPilot.add(alienHead);
+
+  const alienEarGeometry = new THREE.SphereGeometry(1, 20, 14);
+  const leftEar = new THREE.Mesh(alienEarGeometry, alienSkin);
+  leftEar.scale.set(.055, .085, .04);
+  leftEar.position.set(-.205, .13, .015);
+  leftEar.rotation.z = -.24;
+  alienPilot.add(leftEar);
+  const rightEar = leftEar.clone();
+  rightEar.position.x = .205;
+  rightEar.rotation.z = .24;
+  alienPilot.add(rightEar);
+
+  const alienFaceMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x071019, roughness: .08, metalness: .08,
+    clearcoat: 1, clearcoatRoughness: .08,
+  });
+  const alienEyeGeometry = new THREE.SphereGeometry(1, 20, 14);
+  const leftEye = new THREE.Mesh(alienEyeGeometry, alienFaceMaterial);
+  leftEye.scale.set(.068, .092, .042);
+  leftEye.position.set(-.09, .18, .182);
+  leftEye.rotation.z = .26;
+  alienPilot.add(leftEye);
+  const rightEye = leftEye.clone();
+  rightEye.position.x = .09;
+  rightEye.rotation.z = -.26;
+  alienPilot.add(rightEye);
+
+  const eyeShineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const eyeShineGeometry = new THREE.SphereGeometry(.013, 12, 8);
+  const leftEyeShine = new THREE.Mesh(eyeShineGeometry, eyeShineMaterial);
+  leftEyeShine.position.set(-.108, .212, .219);
+  alienPilot.add(leftEyeShine);
+  const rightEyeShine = leftEyeShine.clone();
+  rightEyeShine.position.x = .072;
+  alienPilot.add(rightEyeShine);
+
+  const alienNose = new THREE.Mesh(new THREE.SphereGeometry(.018, 14, 10), alienSkin);
+  alienNose.scale.set(.72, .9, .82);
+  alienNose.position.set(0, .11, .198);
+  alienPilot.add(alienNose);
+  const alienSmile = new THREE.Mesh(
+    new THREE.TorusGeometry(.04, .006, 8, 20, Math.PI),
+    alienFaceMaterial,
+  );
+  alienSmile.position.set(0, .07, .202);
+  alienSmile.rotation.z = Math.PI;
+  alienPilot.add(alienSmile);
+
+  const cheekMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffb6c7, transparent: true, opacity: .68,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const cheekGeometry = new THREE.SphereGeometry(.018, 14, 10);
+  const leftCheek = new THREE.Mesh(cheekGeometry, cheekMaterial);
+  leftCheek.position.set(-.135, .095, .19);
+  alienPilot.add(leftCheek);
+  const rightCheek = leftCheek.clone();
+  rightCheek.position.x = .135;
+  alienPilot.add(rightCheek);
+
+  const alienArmGeometry = new THREE.SphereGeometry(1, 18, 12);
+  const leftArm = new THREE.Mesh(alienArmGeometry, alienSkin);
+  leftArm.scale.set(.042, .115, .044);
+  leftArm.position.set(-.145, -.065, .035);
+  leftArm.rotation.z = -.62;
+  alienPilot.add(leftArm);
+  const rightArm = leftArm.clone();
+  rightArm.position.x = .145;
+  rightArm.rotation.z = .62;
+  alienPilot.add(rightArm);
+  const alienHandGeometry = new THREE.SphereGeometry(.045, 16, 12);
+  const leftHand = new THREE.Mesh(alienHandGeometry, alienSkin);
+  leftHand.scale.set(1.2, .7, .72);
+  leftHand.position.set(-.16, -.025, .11);
+  alienPilot.add(leftHand);
+  const rightHand = leftHand.clone();
+  rightHand.position.x = .16;
+  alienPilot.add(rightHand);
+
+  const antennaMaterial = new THREE.MeshStandardMaterial({
+    color: 0x7bd496, roughness: .52, emissive: 0x16482d, emissiveIntensity: .06,
+  });
+  const antennaGeometry = new THREE.CylinderGeometry(.012, .018, .15, 12);
+  const leftAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+  leftAntenna.position.set(-.075, .37, 0);
+  leftAntenna.rotation.z = -.34;
+  alienPilot.add(leftAntenna);
+  const rightAntenna = leftAntenna.clone();
+  rightAntenna.position.x = .075;
+  rightAntenna.rotation.z = .34;
+  alienPilot.add(rightAntenna);
+  const antennaTipMaterial = new THREE.MeshStandardMaterial({
+    color: 0xa5ffc0, roughness: .25,
+    emissive: 0x45d979, emissiveIntensity: .24,
+  });
+  const antennaTipGeometry = new THREE.SphereGeometry(.035, 18, 12);
+  const leftAntennaTip = new THREE.Mesh(antennaTipGeometry, antennaTipMaterial);
+  leftAntennaTip.position.set(-.1, .44, 0);
+  alienPilot.add(leftAntennaTip);
+  const rightAntennaTip = leftAntennaTip.clone();
+  rightAntennaTip.position.x = .1;
+  alienPilot.add(rightAntennaTip);
+
   const dome = new THREE.Mesh(
-    new THREE.SphereGeometry(.3, 30, 18, 0, Math.PI * 2, 0, Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0x9fe8ff, metalness: .1, roughness: .12, transparent: true, opacity: .55, emissive: 0x2f7ea0, emissiveIntensity: .6 }),
+    new THREE.SphereGeometry(.57, 40, 24, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xa9d3df, metalness: 0, roughness: .12,
+      transparent: true, opacity: .22, transmission: .3,
+      emissive: 0x17394b, emissiveIntensity: .08,
+      side: THREE.DoubleSide, depthWrite: false,
+    }),
   );
-  dome.position.y = .12;
+  dome.position.y = .1;
+  dome.renderOrder = 4;
   craft.add(dome);
-  const rimMaterial = new THREE.MeshBasicMaterial({ color: 0xffd873, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false });
+  const cabinLight = new THREE.PointLight(0xd9fff0, .22, 1.15, 2);
+  cabinLight.position.set(-.28, .4, .3);
+  craft.add(cabinLight);
+
+  const domeTrim = new THREE.Mesh(
+    new THREE.TorusGeometry(.57, .035, 12, 44),
+    new THREE.MeshStandardMaterial({ color: 0x8499aa, metalness: .82, roughness: .28, emissive: 0x122a3b, emissiveIntensity: .12 }),
+  );
+  domeTrim.rotation.x = Math.PI / 2;
+  domeTrim.position.y = .1;
+  craft.add(domeTrim);
+
+  const rimMaterial = new THREE.MeshBasicMaterial({ color: 0xd8edff, transparent: true, opacity: .24, blending: THREE.AdditiveBlending, depthWrite: false });
   const rimLights = new THREE.Mesh(new THREE.TorusGeometry(.7, .055, 14, 44), rimMaterial);
   rimLights.rotation.x = Math.PI / 2;
   rimLights.position.y = -.02;
-  craft.add(rimLights);
-  const emitterMaterial = new THREE.MeshBasicMaterial({ color: 0xffe9b0, transparent: true, opacity: .95, blending: THREE.AdditiveBlending, depthWrite: false });
+  spinningHull.add(rimLights);
+  const bulbMaterial = new THREE.MeshBasicMaterial({
+    color: 0xbfeaff, transparent: true, opacity: .28,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const bulbGeometry = new THREE.SphereGeometry(.045, 14, 10);
+  for (let index = 0; index < 8; index++) {
+    const angle = index / 8 * Math.PI * 2;
+    const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
+    bulb.position.set(Math.cos(angle) * .72, -.035, Math.sin(angle) * .72);
+    spinningHull.add(bulb);
+  }
+  const emitterMaterial = new THREE.MeshBasicMaterial({ color: 0xf4fbff, transparent: true, opacity: .24, blending: THREE.AdditiveBlending, depthWrite: false });
   const emitter = new THREE.Mesh(new THREE.SphereGeometry(.17, 20, 12), emitterMaterial);
-  emitter.position.y = -.12;
-  craft.add(emitter);
+  emitter.position.y = -.21;
+  spinningHull.add(emitter);
 
   // 光束：向下张开的锥体（apex 在碟底、base 在星球表面）；shader 做边缘发光 + 纵向渐变，加色混合出体积感。
   const beamMaterial = new THREE.ShaderMaterial({
-    uniforms: { uOpacity: { value: 0 }, uColor: { value: new THREE.Color(0xffdb8a) } },
+    uniforms: { uOpacity: { value: 0 }, uColor: { value: new THREE.Color(0xe8f4ff) } },
     transparent: true, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: `
       varying float vY; varying vec3 vN;
@@ -470,12 +637,77 @@
   scene.add(beam);
 
   // 真实聚光灯：放在飞碟处朝星球中心打，营造从上而下的锥形照射。
-  const abductLight = new THREE.SpotLight(0xffe4a6, 0, 16, Math.PI / 6, .55, 1.1);
+  const abductLight = new THREE.SpotLight(0xf1f7ff, 0, 16, Math.PI / 6, .82, 1.1);
   scene.add(abductLight);
   scene.add(abductLight.target);
   // 补光：贴相机侧的点光，专门提亮星球正对观众那面（垂直聚光灯只亮顶冠，解决不了"太暗"）。
-  const abductFill = new THREE.PointLight(0xffe0a0, 0, 6, 1.4);
+  const abductFill = new THREE.PointLight(0xe2efff, 0, 6, 1.4);
   scene.add(abductFill);
+
+  const ufoControls = document.querySelector('[data-ufo-controls]');
+  const ufoIntensityInput = document.querySelector('#ufo-light-intensity');
+  const ufoIntensityOutput = document.querySelector('.ufo-light-output');
+  const ufoColorButtons = [...document.querySelectorAll('[data-ufo-color]')];
+  const ufoPalettes = {
+    moon: { css: '#e8f4ff', beam: 0xe8f4ff, spot: 0xf1f7ff, fill: 0xe2efff, rim: 0xd8edff, emitter: 0xf4fbff, bulb: 0xbfeaff },
+    glacier: { css: '#8fd8ff', beam: 0xa8e2ff, spot: 0xd7f1ff, fill: 0x8bcff2, rim: 0x7acfff, emitter: 0xe6f7ff, bulb: 0x73cfff },
+    aurora: { css: '#bfffe4', beam: 0xc8ffe9, spot: 0xdcfff1, fill: 0xb8f7e2, rim: 0x8fffd4, emitter: 0xe5fff7, bulb: 0x80f5cf },
+    ion: { css: '#d8ff94', beam: 0xddffad, spot: 0xefffcf, fill: 0xc8ef86, rim: 0xbcff72, emitter: 0xf4ffd9, bulb: 0xb6f25d },
+    nebula: { css: '#ddd2ff', beam: 0xddd2ff, spot: 0xeee7ff, fill: 0xcfc0ff, rim: 0xb8a7ff, emitter: 0xf3efff, bulb: 0xc5b8ff },
+    rose: { css: '#ffb8db', beam: 0xffc6e1, spot: 0xffe3f1, fill: 0xf4a9ce, rim: 0xff9fce, emitter: 0xfff0f7, bulb: 0xff9acb },
+    solar: { css: '#ffc485', beam: 0xffd0a0, spot: 0xffe4c2, fill: 0xffb874, rim: 0xffa95e, emitter: 0xfff0da, bulb: 0xff9e50 },
+    warm: { css: '#fff1d6', beam: 0xfff1d6, spot: 0xfff6e5, fill: 0xffe9c5, rim: 0xffddb2, emitter: 0xfffbef, bulb: 0xffe4bf },
+  };
+  let ufoIntensity = 55;
+  let ufoIntensityScale = 1;
+  let ufoColor = 'moon';
+  let hoverLeaveTimer = 0;
+  let hoverExitGrace = null;
+  let hoverExitDeadline = 0;
+  let lastBodyPointer = null;
+  const pointerClient = { x: Number.NaN, y: Number.NaN };
+
+  const readStoredUfoSetting = (key) => {
+    try { return localStorage.getItem(key); } catch { return null; }
+  };
+  const storeUfoSetting = (key, value) => {
+    try { localStorage.setItem(key, value); } catch { /* Browser storage may be unavailable. */ }
+  };
+  const applyUfoIntensity = (value, persist = true) => {
+    ufoIntensity = clamp(Number(value) || 55, 20, 100);
+    ufoIntensityScale = ufoIntensity / 55;
+    if (ufoIntensityInput) ufoIntensityInput.value = String(ufoIntensity);
+    if (ufoIntensityOutput) ufoIntensityOutput.value = `${ufoIntensity}%`;
+    if (ufoControls) ufoControls.style.setProperty('--ufo-level', `${ufoIntensity}%`);
+    universe.dataset.ufoIntensity = String(ufoIntensity);
+    if (persist) storeUfoSetting('personal-space-ufo-intensity', String(ufoIntensity));
+  };
+  const applyUfoColor = (value, persist = true) => {
+    ufoColor = ufoPalettes[value] ? value : 'moon';
+    const palette = ufoPalettes[ufoColor];
+    beamMaterial.uniforms.uColor.value.setHex(palette.beam);
+    abductLight.color.setHex(palette.spot);
+    abductFill.color.setHex(palette.fill);
+    rimMaterial.color.setHex(palette.rim);
+    emitterMaterial.color.setHex(palette.emitter);
+    bulbMaterial.color.setHex(palette.bulb);
+    if (ufoControls) ufoControls.style.setProperty('--ufo-control-color', palette.css);
+    for (const button of ufoColorButtons) {
+      const selected = button.dataset.ufoColor === ufoColor;
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    }
+    universe.dataset.ufoColor = ufoColor;
+    universe.dataset.ufoLight = ufoColor === 'moon' ? 'moonlight' : ufoColor;
+    if (persist) storeUfoSetting('personal-space-ufo-color', ufoColor);
+  };
+
+  applyUfoIntensity(readStoredUfoSetting('personal-space-ufo-intensity') || 55, false);
+  applyUfoColor(readStoredUfoSetting('personal-space-ufo-color') || 'moon', false);
+  ufoIntensityInput?.addEventListener('input', (event) => applyUfoIntensity(event.currentTarget.value));
+  for (const button of ufoColorButtons) {
+    button.addEventListener('click', () => applyUfoColor(button.dataset.ufoColor));
+  }
 
   const bodyNodes = new Map(
     [...universe.querySelectorAll('[data-body]')].map((node) => [node.dataset.body, node]),
@@ -509,17 +741,94 @@
   const beamDir = new THREE.Vector3();
   const beamDirNeg = new THREE.Vector3();
   const camUp = new THREE.Vector3();
+  const camRight = new THREE.Vector3();
+  const ufoScreen = new THREE.Vector3();
   const upAxis = new THREE.Vector3(0, 1, 0);
   const ufoQuat = new THREE.Quaternion();
 
   const setHovered = (body) => {
+    if (body) {
+      clearTimeout(hoverLeaveTimer);
+      hoverLeaveTimer = 0;
+    }
     if (hoveredBody === body) return;
     if (hoveredBody) bodyNodes.get(hoveredBody)?.classList.remove('is-three-hovered');
     hoveredBody = body;
+    if (!body) {
+      hoverExitGrace = null;
+      lastBodyPointer = null;
+      hoverExitDeadline = 0;
+    }
     if (body) bodyNodes.get(body)?.classList.add('is-three-hovered');
     universe.dataset.activeBody = body || '';
     universe.dataset.sceneFocus = body ? 'true' : 'false';
+    const controlsVisible = Boolean(body && body !== 'sun');
+    universe.dataset.ufoControls = controlsVisible ? 'visible' : 'hidden';
+    ufoControls?.setAttribute('aria-hidden', String(!controlsVisible));
     canvas.style.cursor = body && (bodyNodes.get(body)?.matches('a')) ? 'pointer' : 'default';
+  };
+  const pointerWithinNode = (node) => {
+    if (!node || !Number.isFinite(pointerClient.x) || !Number.isFinite(pointerClient.y)) return false;
+    const rect = node.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const radius = Math.min(rect.width, rect.height) / 2;
+    return Math.hypot(pointerClient.x - centerX, pointerClient.y - centerY) <= radius;
+  };
+  const shouldRetainHoveredBody = (includeControlFocus = true) => {
+    const activeNode = hoveredBody && bodyNodes.get(hoveredBody);
+    return Boolean(ufoControls?.matches(':hover'))
+      || Boolean(includeControlFocus && ufoControls?.contains(document.activeElement))
+      || pointerWithinNode(activeNode)
+      || Boolean(activeNode?.contains(document.activeElement));
+  };
+  const scheduleHoverClear = (delay = 120, includeControlFocus = true) => {
+    clearTimeout(hoverLeaveTimer);
+    hoverLeaveTimer = window.setTimeout(() => {
+      const retained = shouldRetainHoveredBody(includeControlFocus);
+      const corridorRemaining = hoverExitGrace
+        ? Math.max(0, hoverExitDeadline - performance.now())
+        : 0;
+      if (retained) return;
+      if (corridorRemaining > 0) {
+        scheduleHoverClear(corridorRemaining, includeControlFocus);
+        return;
+      }
+      setHovered(null);
+    }, delay);
+  };
+  const pointInTriangle = (point, first, second, third) => {
+    const sign = (left, right, top) => (
+      (left.x - top.x) * (right.y - top.y) - (right.x - top.x) * (left.y - top.y)
+    );
+    const sideA = sign(point, first, second);
+    const sideB = sign(point, second, third);
+    const sideC = sign(point, third, first);
+    return !((sideA < 0 || sideB < 0 || sideC < 0)
+      && (sideA > 0 || sideB > 0 || sideC > 0));
+  };
+  const makeControlCorridor = (origin) => {
+    if (!ufoControls || hoveredBody === 'sun') return null;
+    const rect = ufoControls.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const horizontal = Math.abs(centerX - origin.x) > Math.abs(centerY - origin.y);
+    const padding = 28;
+
+    if (horizontal) {
+      const edgeX = centerX > origin.x ? rect.left - padding : rect.right + padding;
+      return {
+        origin,
+        first: { x: edgeX, y: rect.top - padding },
+        second: { x: edgeX, y: rect.bottom + padding },
+      };
+    }
+    const edgeY = centerY > origin.y ? rect.top - padding : rect.bottom + padding;
+    return {
+      origin,
+      first: { x: rect.left - padding, y: edgeY },
+      second: { x: rect.right + padding, y: edgeY },
+    };
   };
 
   const resize = () => {
@@ -606,7 +915,7 @@
     const hit = raycaster.intersectObjects(pickables, false)[0];
     if (hit) {
       emptyFrames = 0;
-      setHovered(hit.object.userData.body || null);
+      setHovered(hit.object.userData.body || null, 'raycast');
     } else if (hoveredBody) {
       emptyFrames += 1;
       if (emptyFrames > 6) setHovered(null);
@@ -636,11 +945,97 @@
     delete universe.dataset.scene;
   }, { once: true });
   for (const [body, node] of bodyNodes) {
-    node.addEventListener('pointerenter', () => setHovered(body));
-    node.addEventListener('pointerleave', () => setHovered(null));
-    node.addEventListener('focusin', () => setHovered(body));
-    node.addEventListener('focusout', () => setHovered(null));
+    node.addEventListener('pointerenter', (event) => {
+      pointerClient.x = event.clientX;
+      pointerClient.y = event.clientY;
+      lastBodyPointer = { x: pointerClient.x, y: pointerClient.y };
+      hoverExitGrace = null;
+      hoverExitDeadline = 0;
+      setHovered(body, 'dom');
+    });
+    const leaveBody = (event) => {
+      if (hoveredBody !== body) return;
+      pointerClient.x = event.clientX;
+      pointerClient.y = event.clientY;
+      const rect = node.getBoundingClientRect();
+      hoverExitGrace = makeControlCorridor(lastBodyPointer || {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      });
+      hoverExitDeadline = performance.now() + 520;
+      const movingToControls = Boolean(ufoControls?.contains(event.relatedTarget))
+        || Boolean(hoverExitGrace && pointInTriangle(
+          pointerClient,
+          hoverExitGrace.origin,
+          hoverExitGrace.first,
+          hoverExitGrace.second,
+        ));
+      if (!movingToControls) {
+        hoverExitGrace = null;
+        hoverExitDeadline = 0;
+        setHovered(null);
+        return;
+      }
+      scheduleHoverClear();
+    };
+    node.addEventListener('pointerleave', leaveBody);
+    node.addEventListener('mouseleave', leaveBody);
+    node.addEventListener('focusin', () => setHovered(body, 'focus'));
+    node.addEventListener('focusout', () => scheduleHoverClear(100));
   }
+  const handleHoverPointerMove = (event) => {
+    const point = { x: event.clientX, y: event.clientY };
+    pointerClient.x = point.x;
+    pointerClient.y = point.y;
+    const activeNode = hoveredBody && bodyNodes.get(hoveredBody);
+    if (!activeNode || ufoControls?.matches(':hover') || ufoControls?.contains(event.target)) return;
+    if (pointerWithinNode(activeNode)) {
+      lastBodyPointer = point;
+      hoverExitGrace = null;
+      hoverExitDeadline = 0;
+      clearTimeout(hoverLeaveTimer);
+      return;
+    }
+    if (!hoverExitGrace) {
+      const rect = activeNode.getBoundingClientRect();
+      hoverExitGrace = makeControlCorridor(lastBodyPointer || {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      });
+      hoverExitDeadline = performance.now() + 520;
+      scheduleHoverClear();
+    }
+    if (!hoverExitGrace) return;
+    const nearExit = Math.hypot(
+      point.x - hoverExitGrace.origin.x,
+      point.y - hoverExitGrace.origin.y,
+    ) < 24;
+    if (nearExit) return;
+    if (performance.now() < hoverExitDeadline && pointInTriangle(
+      point,
+      hoverExitGrace.origin,
+      hoverExitGrace.first,
+      hoverExitGrace.second,
+    )) {
+      scheduleHoverClear(140);
+      return;
+    }
+    hoverExitGrace = null;
+    hoverExitDeadline = 0;
+    setHovered(null);
+  };
+  document.addEventListener('pointermove', handleHoverPointerMove, { passive: true });
+  document.addEventListener('mousemove', handleHoverPointerMove, { passive: true });
+  ufoControls?.addEventListener('pointerenter', () => {
+    hoverExitGrace = null;
+    hoverExitDeadline = 0;
+    clearTimeout(hoverLeaveTimer);
+  });
+  ufoControls?.addEventListener('pointerleave', () => {
+    scheduleHoverClear(120, false);
+  });
+  ufoControls?.addEventListener('focusin', () => clearTimeout(hoverLeaveTimer));
+  ufoControls?.addEventListener('focusout', () => scheduleHoverClear(100));
 
   const animate = (now) => {
     requestAnimationFrame(animate);
@@ -737,10 +1132,17 @@
       desiredPos.copy(homePos);
       focusPoint.set(0, 0, 0);
     }
-    const ease = focusObject ? .12 : .05;
+    const baseEase = focusObject ? .12 : .2;
+    const ease = 1 - Math.pow(1 - baseEase, delta * 60);
     camera.position.lerp(desiredPos, ease);
     camLookAt.lerp(focusPoint, ease);
     camera.lookAt(camLookAt);
+    const cameraHomeDistance = camera.position.distanceTo(homePos);
+    universe.dataset.cameraState = focusObject
+      ? 'focused'
+      : cameraHomeDistance < .75
+        ? 'overview'
+        : 'returning';
 
     // 飞碟聚光灯：hover 非太阳天体时淡入并停在星球前上方，锥形光束斜射照亮正对观众的暗面。
     const ufoBody = hoveredBody && hoveredBody !== 'sun' ? objectByBody.get(hoveredBody) : null;
@@ -751,17 +1153,35 @@
         ufoBody.getWorldScale(ufoScale);
       }
       const bodyRadius = ufoScale.x || .4;
-      // 飞碟相对相机放置：距离与偏移都按"相机到星球的距离"归一化，无论 fly-to 拉得多近，
-      // 飞碟都稳定停在画面里星球的斜上方、不会被顶出视口，光束顺势斜射下来（贴合参考图构图）。
+      // 飞碟先相对相机停在星球斜上方，再按屏幕投影收进安全区；否则超宽屏聚焦大行星时碟身会越过 Canvas 顶边。
       camToBody.copy(camera.position).sub(ufoTarget);
       const camDist = camToBody.length();
       camToBody.normalize();
       camUp.set(0, 1, 0).applyQuaternion(camera.quaternion).normalize(); // 相机的屏幕上方
-      const bob = Math.sin(now / 620) * camDist * .01;
-      const upOff = camDist * .17 + bodyRadius * .5 + bob;  // 屏上"上方"偏移（贴近星球，飞碟留在画面内）
-      const backOff = camDist * .16 + bodyRadius * .3;       // 朝相机侧后退，露出飞碟与光束体积
-      ufoPos.copy(ufoTarget).addScaledVector(camUp, upOff).addScaledVector(camToBody, backOff);
-      const craftScale = clamp(camDist * .085, .2, .82);     // 屏上大小恒定
+      camRight.set(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+      const bob = Math.sin(now / 620) * camDist * .008;
+      const upOff = camDist * .14 + bodyRadius * .42 + bob;
+      const backOff = camDist * .18 + bodyRadius * .3;
+      const sideOff = camDist * .025 + bodyRadius * .18;
+      ufoPos.copy(ufoTarget)
+        .addScaledVector(camUp, upOff)
+        .addScaledVector(camRight, sideOff)
+        .addScaledVector(camToBody, backOff);
+      const craftScale = clamp(camDist * .05, .12, .46);
+
+      const ufoDepth = camera.position.distanceTo(ufoPos);
+      const halfHeight = ufoDepth * Math.tan(THREE.MathUtils.degToRad(camera.fov * .5));
+      const halfWidth = halfHeight * camera.aspect;
+      const maxNdcY = rectWidth() < 500 ? .48 : .58;
+      const minNdcY = -.68;
+      const maxNdcX = rectWidth() < 500 ? .7 : .78;
+      ufoScreen.copy(ufoPos).project(camera);
+      if (ufoScreen.y > maxNdcY) ufoPos.addScaledVector(camUp, -(ufoScreen.y - maxNdcY) * halfHeight);
+      if (ufoScreen.y < minNdcY) ufoPos.addScaledVector(camUp, (minNdcY - ufoScreen.y) * halfHeight);
+      ufoScreen.copy(ufoPos).project(camera);
+      if (ufoScreen.x > maxNdcX) ufoPos.addScaledVector(camRight, -(ufoScreen.x - maxNdcX) * halfWidth);
+      if (ufoScreen.x < -maxNdcX) ufoPos.addScaledVector(camRight, (-maxNdcX - ufoScreen.x) * halfWidth);
+
       // 光束轴：飞碟 → 星球中心
       beamDir.copy(ufoTarget).sub(ufoPos);
       const beamLen = beamDir.length();
@@ -775,35 +1195,69 @@
       ufo.position.copy(ufoPos);
       ufo.quaternion.copy(ufoQuat);
       craft.scale.setScalar(craftScale * ufoPresent);
-      craft.rotation.y += delta * 1.4;                  // 碟身绕自身法线自转
-      rimMaterial.opacity = (.55 + Math.sin(now / 180) * .35) * ufoPresent;
-      emitterMaterial.opacity = (.7 + Math.sin(now / 150) * .28) * ufoPresent;
+      spinningHull.rotation.y += delta * .85;
+      alienPilot.position.y = .13 + Math.sin(now / 430) * .008;
+      alienPilot.lookAt(camera.position);
+      alienPilot.rotateY(.14 + Math.sin(now / 920) * .035);
+      alienPilot.rotateZ(Math.sin(now / 520) * .055);
+      const breathing = 1 + Math.sin(now / 360) * .025;
+      alienBody.scale.y = .17 * breathing;
+      leftArm.rotation.z = -.62 + Math.sin(now / 470) * .045;
+      rightArm.rotation.z = .62 - Math.sin(now / 470) * .045;
+      leftHand.position.y = -.025 + Math.sin(now / 470) * .006;
+      rightHand.position.y = leftHand.position.y;
+      const blinkDistance = Math.abs((now % 4200) - 4050);
+      const blink = blinkDistance < 120 ? .18 + blinkDistance / 120 * .82 : 1;
+      leftEye.scale.y = .092 * blink;
+      rightEye.scale.y = .092 * blink;
+      leftEyeShine.visible = blink > .45;
+      rightEyeShine.visible = blink > .45;
+      const antennaPulse = 1 + Math.sin(now / 250) * .12;
+      leftAntennaTip.scale.setScalar(antennaPulse);
+      rightAntennaTip.scale.setScalar(antennaPulse);
+      antennaTipMaterial.emissiveIntensity = .2 + Math.sin(now / 250) * .05;
+      cabinLight.intensity = (.16 + Math.sin(now / 420) * .025) * ufoPresent;
+      const craftGlowScale = clamp(.62 + ufoIntensityScale * .12, .62, .84);
+      rimMaterial.opacity = (.12 + Math.sin(now / 180) * .035) * ufoPresent * craftGlowScale;
+      emitterMaterial.opacity = (.17 + Math.sin(now / 150) * .045) * ufoPresent * craftGlowScale;
+      bulbMaterial.opacity = (.19 + Math.sin(now / 210) * .055) * ufoPresent * craftGlowScale;
       saucer.material.opacity = ufoPresent;
-      dome.material.opacity = .55 * ufoPresent;
+      dome.material.opacity = .16 * ufoPresent;
 
       // 光束锥：单位锥（+Y 顶细 / -Y 底宽）沿飞碟→星球轴，base 落到星球上缘。
-      const beamBotR = bodyRadius * 1.12;
+      const beamBotR = bodyRadius * .94;
       beam.position.copy(ufoPos).addScaledVector(beamDir, beamLen / 2);
       beam.quaternion.copy(ufoQuat);
       beam.scale.set(beamBotR, beamLen, beamBotR);
-      beamMaterial.uniforms.uOpacity.value = ufoPresent * .9;
+      beamMaterial.uniforms.uOpacity.value = ufoPresent * clamp(.16 * ufoIntensityScale, .055, .28);
 
-      // 聚光灯从飞碟处朝星球中心照。
+      // 飞碟仅作叙事点缀；灯光预算集中到星球表面，确保视觉重心仍是被聚焦的天体。
+      const planetLightScale = clamp(.82 + ufoIntensityScale * .34, .9, 1.45);
       abductLight.position.copy(ufoPos);
       abductLight.target.position.copy(ufoTarget);
-      abductLight.intensity = ufoPresent * (30 + bodyRadius * 24);
+      abductLight.intensity = ufoPresent * (3.5 + bodyRadius * 2.5) * planetLightScale;
       abductLight.distance = beamLen + bodyRadius * 2 + 2;
       abductLight.angle = Math.atan2(beamBotR, beamLen) + .12;
       // 补光贴相机侧，提亮正对观众那面（斜聚光灯仍可能留边缘暗区）。
       abductFill.position.copy(ufoTarget).addScaledVector(camToBody, bodyRadius + .6);
       abductFill.position.y += bodyRadius * .4;
-      abductFill.intensity = ufoPresent * (8 + bodyRadius * 9);
+      abductFill.intensity = ufoPresent * (5.5 + bodyRadius * 4.5) * planetLightScale;
       abductFill.distance = bodyRadius * 4 + 3;
+
+      ufoScreen.copy(ufoPos).project(camera);
+      universe.dataset.ufoState = ufoBody ? 'active' : 'leaving';
+      universe.dataset.ufoFrame = (
+        Math.abs(ufoScreen.x) <= maxNdcX + .01
+        && ufoScreen.y <= maxNdcY + .01
+        && ufoScreen.y >= minNdcY - .01
+      ) ? 'safe' : 'edge';
     } else {
       ufo.visible = false;
       beam.visible = false;
       abductLight.intensity = 0;
       abductFill.intensity = 0;
+      universe.dataset.ufoState = 'idle';
+      universe.dataset.ufoFrame = 'safe';
     }
 
     renderer.render(scene, camera);
@@ -817,5 +1271,14 @@
   universe.classList.add('three-ready');
   universe.dataset.scene = 'three';
   universe.dataset.decor = 'belt-meteors';
+  universe.dataset.ufoState = 'idle';
+  universe.dataset.ufoFrame = 'safe';
+  universe.dataset.ufoLight = ufoColor === 'moon' ? 'moonlight' : ufoColor;
+  universe.dataset.ufoStyle = 'chibi-alien-3d';
+  universe.dataset.ufoSize = 'compact';
+  universe.dataset.hoverEmphasis = 'planet';
+  universe.dataset.hoverRelease = 'bounded-fast-return-v2';
+  universe.dataset.cameraState = 'overview';
+  universe.dataset.ufoControls = 'hidden';
   requestAnimationFrame(animate);
 })();

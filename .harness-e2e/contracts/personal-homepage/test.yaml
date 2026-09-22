@@ -2,7 +2,7 @@ version: 1
 runtime:
   engine: playwright
   agent: playwright
-  timeoutMs: 60000
+  timeoutMs: 120000
 environment:
   targetUrl: http://127.0.0.1:4177
   viewport:
@@ -17,6 +17,14 @@ cases:
         action: assertVisible
         target: '#home-title'
         implements: [home-ready]
+      - id: home-browser-title
+        action: assertVisible
+        target: 'xpath=//html[head/title[normalize-space(.)="Loren''s Galaxy"]]'
+        implements: [galaxy-browser-title]
+      - id: saturn-browser-icon
+        action: assertVisible
+        target: 'xpath=//html[head/link[@rel="icon" and @type="image/png" and @sizes="128x128" and @href="./assets/lorens-saturn-favicon.png?v=20260921-1"]]'
+        implements: [saturn-browser-icon]
       - id: wordmark-visible
         action: assertVisible
         target: '.wordmark'
@@ -25,6 +33,54 @@ cases:
         action: assertVisible
         target: '.hero-name'
         implements: [typography-system]
+      - id: hero-footnote-primary-visible
+        action: assertText
+        target: '.hero-footnotes .hero-footnote:not(.hero-footnote-alt) [data-profile="note"]'
+        value: 保持好奇，持续创造。
+        implements: [hero-footnote-quotes]
+      - id: hero-footnote-alt-visible
+        action: assertText
+        target: '.hero-footnotes .hero-footnote-alt [data-profile="noteAlt"]'
+        value: Carpe diem · 此心安处是吾乡。
+        implements: [hero-footnote-quotes]
+      - id: home-portrait-visible
+        action: assertVisible
+        target: '.hero-portrait img[src="./assets/loren-portrait.webp"][alt="loren 的个人照片"]'
+        implements: [home-portrait]
+      - id: home-education-school-visible
+        action: assertText
+        target: '.hero-education'
+        value: 西安电子科技大学
+        implements: [home-education-summary]
+      - id: xidian-emblem-visible
+        action: assertVisible
+        target: '.hero-education-emblem img[src="./assets/xidian-university-emblem.png"][alt="西安电子科技大学校徽"]'
+        implements: [home-education-summary]
+      - id: home-education-masters-visible
+        action: assertText
+        target: '.hero-education'
+        value: 硕士 · 计算机技术
+        implements: [home-education-summary]
+      - id: home-education-bachelor-visible
+        action: assertText
+        target: '.hero-education'
+        value: 本科 · 软件工程
+        implements: [home-education-summary]
+      - id: home-role-visible
+        action: assertText
+        target: '.hero-profile-meta [data-profile="role"]'
+        value: Bytedance Seed AI Infra Engineer
+        implements: [professional-profile]
+      - id: home-location-visible
+        action: assertText
+        target: '.hero-profile-meta [data-profile="location"]'
+        value: 中国 上海市
+        implements: [professional-profile]
+      - id: home-location-english-visible
+        action: assertText
+        target: '.hero-profile-location [data-profile="locationEn"]'
+        value: CHINA · SHANGHAI
+        implements: [home-location-bilingual]
       - id: home-sun-icon-visible
         action: assertVisible
         target: '.desktop-nav [data-nav="home"] .celestial-icon-sun'
@@ -54,6 +110,45 @@ cases:
         action: assertVisible
         target: '.universe.three-ready .planet-projects .planet-label'
         implements: [three-dimensional-system]
+      - id: time-control-visible
+        action: assertVisible
+        target: '.time-control .time-faster'
+        implements: [orbital-time-control]
+      - id: speed-up-time
+        action: click
+        target: '.time-faster'
+      - id: time-scale-faster
+        action: assertText
+        target: '.time-scale-readout'
+        value: 2×
+        implements: [orbital-time-control]
+      - id: slow-down-time
+        action: click
+        target: '.time-slower'
+      - id: time-scale-restored
+        action: assertVisible
+        target: 'html[data-time-scale="1"] .time-control'
+        implements: [orbital-time-control]
+      - id: pause-motion
+        action: click
+        target: '.motion-toggle'
+      - id: paused-visible
+        action: assertVisible
+        target: 'html[data-cosmic-motion="paused"] .motion-toggle[aria-pressed="true"]'
+        implements: [motion-control]
+      - id: resume-motion
+        action: click
+        target: '.motion-toggle'
+      - id: playing-visible
+        action: assertVisible
+        target: 'html[data-cosmic-motion="playing"] .motion-toggle[aria-pressed="false"]'
+        implements: [motion-control]
+      - id: freeze-for-ufo
+        action: click
+        target: '.motion-toggle'
+      - id: paused-for-ufo
+        action: assertVisible
+        target: 'html[data-cosmic-motion="paused"] .motion-toggle[aria-pressed="true"]'
       - id: solar-diameter-hidden
         action: assertHidden
         target: '.solar-center small'
@@ -80,10 +175,6 @@ cases:
         action: assertVisible
         target: 'canvas[data-world="neptune"][data-renderer="canvas"]'
         implements: [celestial-navigation]
-      - id: saturn-layered
-        action: assertVisible
-        target: '.planet-saturn[data-ring="layered"] canvas[data-world="saturn"]'
-        implements: [saturn-ring-layering]
       - id: saturn-nav-layered
         action: assertVisible
         target: '.desktop-nav .celestial-icon-saturn[data-ring="layered"] canvas'
@@ -93,7 +184,7 @@ cases:
         target: '.planet-projects .planet-label small'
       - id: hover-earth
         action: hover
-        target: '.planet-projects'
+        target: '.planet-projects .planet'
       - id: earth-orbit-active
         action: assertVisible
         target: '.universe[data-active-body="earth"][data-active-orbit="three"]'
@@ -102,54 +193,69 @@ cases:
         action: assertVisible
         target: '.planet-projects .planet-label small'
         implements: [planet-hover-focus]
+      - id: ufo-lighting-safe
+        action: assertVisible
+        target: '.universe[data-ufo-state="active"][data-ufo-frame="safe"][data-ufo-light="moonlight"][data-ufo-style="chibi-alien-3d"][data-ufo-size="compact"][data-hover-emphasis="planet"]'
+        implements: [ufo-hover-lighting]
+      - id: ufo-controls-visible
+        action: assertVisible
+        target: '.ufo-controls[aria-hidden="false"]'
+        implements: [ufo-light-controls]
+      - id: leave-earth-focus
+        action: hover
+        target: '.wordmark'
+      - id: earth-focus-released
+        action: assertVisible
+        target: '.universe[data-scene-focus="false"][data-active-body=""][data-ufo-controls="hidden"][data-camera-state="overview"]'
+        implements: [planet-hover-release]
+      - id: hover-earth-for-controls
+        action: hover
+        target: '.planet-projects .planet'
+      - id: ufo-controls-visible-again
+        action: assertVisible
+        target: '.ufo-controls[aria-hidden="false"]'
+      - id: set-ufo-intensity
+        action: fill
+        target: '#ufo-light-intensity'
+        value: '80'
+      - id: ufo-intensity-updated
+        action: assertText
+        target: '.ufo-light-output'
+        value: 80%
+        implements: [ufo-light-controls]
+      - id: extended-ufo-colors-visible
+        action: assertVisible
+        target: '.ufo-color-options:has([data-ufo-color="glacier"]):has([data-ufo-color="ion"]):has([data-ufo-color="rose"]):has([data-ufo-color="solar"])'
+        implements: [ufo-light-controls]
+      - id: select-rose-light
+        action: click
+        target: '.ufo-color-button[data-ufo-color="rose"]'
+      - id: rose-light-selected
+        action: assertVisible
+        target: '.universe[data-ufo-color="rose"][data-ufo-intensity="80"] ~ .ufo-controls .ufo-color-button[data-ufo-color="rose"][aria-pressed="true"]'
+        implements: [ufo-light-controls]
+      - id: hover-earth-again
+        action: hover
+        target: '.planet-projects .planet'
       - id: nav-earth-visible
         action: assertVisible
         target: '.desktop-nav [data-celestial-icon="earth"] canvas'
         implements: [celestial-navigation]
-      - id: pause-motion
-        action: click
-        target: '.motion-toggle'
-      - id: paused-visible
-        action: assertVisible
-        target: 'html[data-cosmic-motion="paused"] .motion-toggle[aria-pressed="true"]'
-        implements: [motion-control]
-      - id: resume-motion
-        action: click
-        target: '.motion-toggle'
-      - id: playing-visible
-        action: assertVisible
-        target: 'html[data-cosmic-motion="playing"] .motion-toggle[aria-pressed="false"]'
-        implements: [motion-control]
-      - id: time-control-visible
-        action: assertVisible
-        target: '.time-control .time-faster'
-        implements: [orbital-time-control]
-      - id: speed-up-time
-        action: click
-        target: '.time-faster'
-      - id: time-scale-faster
-        action: assertText
-        target: '.time-scale-readout'
-        value: 2×
-        implements: [orbital-time-control]
-      - id: slow-down-time
-        action: click
-        target: '.time-slower'
-      - id: time-scale-restored
-        action: assertVisible
-        target: 'html[data-time-scale="1"] .time-control'
-        implements: [orbital-time-control]
       - id: navigate-earth
         action: click
-        target: '.planet-projects'
+        target: '.planet-projects .planet'
       - id: earth-opens-projects
         action: assertVisible
         target: '#projects-title'
         implements: [celestial-navigation]
       - id: projects-scene-visible
         action: assertVisible
-        target: 'html[data-page="projects"] #page-art[data-scene="projects"]'
+        target: 'html[data-page="projects"] #page-art[data-scene="projects"][data-renderer="photographic-canvas"][data-scene-body="earth"]'
         implements: [section-background-scenes]
+      - id: project-satellites-visible
+        action: assertVisible
+        target: 'html[data-page="projects"] #page-art[data-orbital-satellites="three"][data-satellite-orbits="three"]'
+        implements: [project-orbital-satellites]
       - id: open-about
         action: click
         target: '.desktop-nav [data-nav="about"]'
@@ -157,9 +263,19 @@ cases:
         action: assertVisible
         target: '#about-content .about-facts'
         implements: [expanded-sections]
+      - id: about-role-visible
+        action: assertText
+        target: '#about-content [data-profile-field="role"]'
+        value: Bytedance Seed AI Infra Engineer
+        implements: [professional-profile]
+      - id: about-location-visible
+        action: assertText
+        target: '#about-content [data-profile-field="location"]'
+        value: 中国 上海市
+        implements: [professional-profile]
       - id: about-scene-visible
         action: assertVisible
-        target: 'html[data-page="about"] #page-art[data-scene="about"]'
+        target: 'html[data-page="about"] #page-art[data-scene="about"][data-renderer="photographic-canvas"][data-scene-body="mercury"]'
         implements: [section-background-scenes]
       - id: open-lab
         action: click
@@ -170,18 +286,142 @@ cases:
         implements: [expanded-sections]
       - id: lab-scene-visible
         action: assertVisible
-        target: 'html[data-page="lab"] #page-art[data-scene="lab"]'
+        target: 'html[data-page="lab"] #page-art[data-scene="lab"][data-renderer="photographic-canvas"][data-scene-body="mars"]'
         implements: [section-background-scenes]
       - id: open-journey
         action: click
         target: '.desktop-nav [data-nav="journey"]'
       - id: journey-visible
         action: assertVisible
-        target: '#journey-list .journey-item:first-child'
+        target: '#work-experience-list .experience-role:first-child'
         implements: [expanded-sections]
+      - id: journey-browser-title
+        action: assertVisible
+        target: 'xpath=//html[head/title[normalize-space(.)="Loren''s Galaxy"]]'
+        implements: [galaxy-browser-title]
+      - id: bytedance-company-visible
+        action: assertText
+        target: '#work-experience-list [data-company="字节跳动"] .experience-company-header'
+        value: 字节跳动
+        implements: [work-experience-profile]
+      - id: bytedance-company-logo-visible
+        action: assertVisible
+        target: '#work-experience-list .experience-company-logo img[src="./assets/bytedance-logo.png"][alt="ByteDance"]'
+        implements: [work-experience-icons]
+      - id: work-location-visible
+        action: assertText
+        target: '#work-experience-list [data-company="字节跳动"] .experience-location'
+        value: 中国 上海市
+        implements: [work-experience-profile]
+      - id: work-mode-visible
+        action: assertText
+        target: '#work-experience-list [data-company="字节跳动"] .experience-location'
+        value: 现场办公
+        implements: [work-experience-profile]
+      - id: seed-role-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"]'
+        value: Seed AI Infra Engineer
+        implements: [work-experience-profile]
+      - id: seed-role-logo-visible
+        action: assertVisible
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"] .journey-aside > .experience-role-logo img[src="./assets/bytedance-seed-logo.png"][alt="ByteDance Seed"]'
+        implements: [work-experience-icons]
+      - id: seed-period-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"]'
+        value: 2026.01 — 至今
+        implements: [work-experience-profile]
+      - id: seed-focus-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"]'
+        value: Multi-Agent Long Horizon Framework
+        implements: [work-experience-profile]
+      - id: seed-platform-focus-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"]'
+        value: ML Infra Platform
+        implements: [work-experience-profile]
+      - id: seed-agentic-focus-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"]'
+        value: Agentic ML Infra & Agent
+        implements: [work-experience-profile]
+      - id: seed-harness-focus-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"]'
+        value: Harness
+        implements: [work-experience-profile]
+      - id: seed-skills-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"] .experience-skills'
+        value: Python
+        implements: [work-experience-profile]
+      - id: seed-go-skill-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Seed AI Infra Engineer"] .experience-skills'
+        value: Go
+        implements: [work-experience-profile]
+      - id: ads-role-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Ads Infra Engineer"]'
+        value: Ads Infra Engineer
+        implements: [work-experience-profile]
+      - id: ads-role-logo-visible
+        action: assertVisible
+        target: '#work-experience-list [data-role="Ads Infra Engineer"] .journey-aside > .experience-role-logo img[src="./assets/ocean-engine-logo.png"][alt="巨量引擎 Ocean Engine"]'
+        implements: [work-experience-icons]
+      - id: ads-period-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Ads Infra Engineer"]'
+        value: 2024.04 — 2025.12
+        implements: [work-experience-profile]
+      - id: ads-project-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Ads Infra Engineer"]'
+        value: 巨量有戏 AIGC
+        implements: [work-experience-profile]
+      - id: work-skills-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Ads Infra Engineer"] .experience-skills'
+        value: Java
+        implements: [work-experience-profile]
+      - id: work-react-skill-visible
+        action: assertText
+        target: '#work-experience-list [data-role="Ads Infra Engineer"] .experience-skills'
+        value: React.js
+        implements: [work-experience-profile]
+      - id: masters-education-visible
+        action: assertText
+        target: '#journey-list .journey-item[data-degree="硕士"]'
+        value: 西安电子科技大学
+        implements: [education-profile]
+      - id: masters-major-visible
+        action: assertText
+        target: '#journey-list .journey-item[data-degree="硕士"]'
+        value: 计算机技术
+        implements: [education-profile]
+      - id: masters-emblem-visible
+        action: assertVisible
+        target: '#journey-list .journey-item[data-degree="硕士"] .journey-aside .journey-emblem img[src="./assets/xidian-university-emblem.png"][alt="西安电子科技大学校徽"]'
+        implements: [education-profile]
+      - id: bachelor-education-visible
+        action: assertText
+        target: '#journey-list .journey-item[data-degree="本科"]'
+        value: 西安电子科技大学
+        implements: [education-profile]
+      - id: bachelor-major-visible
+        action: assertText
+        target: '#journey-list .journey-item[data-degree="本科"]'
+        value: 软件工程
+        implements: [education-profile]
+      - id: bachelor-emblem-visible
+        action: assertVisible
+        target: '#journey-list .journey-item[data-degree="本科"] .journey-aside .journey-emblem img[src="./assets/xidian-university-emblem.png"][alt="西安电子科技大学校徽"]'
+        implements: [education-profile]
       - id: journey-scene-visible
         action: assertVisible
-        target: 'html[data-page="journey"] #page-art[data-scene="journey"]'
+        target: 'html[data-page="journey"] #page-art[data-scene="journey"][data-renderer="photographic-canvas"][data-scene-body="jupiter"]'
         implements: [section-background-scenes]
       - id: open-library
         action: click
@@ -192,7 +432,7 @@ cases:
         implements: [expanded-sections]
       - id: library-scene-visible
         action: assertVisible
-        target: 'html[data-page="library"] #page-art[data-scene="library"]'
+        target: 'html[data-page="library"] #page-art[data-scene="library"][data-renderer="photographic-canvas"][data-scene-body="saturn"]'
         implements: [section-background-scenes]
       - id: open-ideas-before-writing
         action: click
@@ -203,14 +443,14 @@ cases:
         implements: [expanded-sections]
       - id: ideas-scene-visible
         action: assertVisible
-        target: 'html[data-page="ideas"] #page-art[data-scene="ideas"]'
+        target: 'html[data-page="ideas"] #page-art[data-scene="ideas"][data-renderer="photographic-canvas"][data-scene-body="neptune"]'
         implements: [section-background-scenes]
       - id: open-writing
         action: click
         target: '.desktop-nav [data-nav="writing"]'
       - id: writing-scene-visible
         action: assertVisible
-        target: 'html[data-page="writing"] #page-art[data-scene="writing"]'
+        target: 'html[data-page="writing"] #page-art[data-scene="writing"][data-renderer="photographic-canvas"][data-scene-body="moon"]'
         implements: [section-background-scenes]
       - id: search-writing
         action: fill
@@ -227,6 +467,10 @@ cases:
         action: assertVisible
         target: '#reader-body blockquote'
         implements: [article-readable]
+      - id: article-browser-title
+        action: assertVisible
+        target: 'xpath=//html[head/title[normalize-space(.)="Loren''s Galaxy"]]'
+        implements: [galaxy-browser-title]
       - id: dismiss-article
         action: press
         target: '#reader-close'
@@ -288,11 +532,19 @@ cases:
       - id: restore-theme
         action: click
         target: '.theme-toggle'
+      - id: footer-github-link-visible
+        action: assertVisible
+        target: '#contact-actions .github-link[href="https://github.com/Jeff-Zzh"][target="_blank"][rel~="noopener"]'
+        implements: [github-profile-link]
       - id: open-contact
         action: click
         target: '#contact-open'
-      - id: contact-empty
+      - id: contact-github-guidance
         action: assertText
         target: '#contact-message'
-        value: 这是个人主页演示，暂未提供联系方式。
+        value: 暂未公开邮箱，你可以通过 GitHub 了解我的项目与动态。
         implements: [honest-contact]
+      - id: dialog-github-link-visible
+        action: assertVisible
+        target: '#contact-details .github-link[href="https://github.com/Jeff-Zzh"][target="_blank"][rel~="noopener"]'
+        implements: [github-profile-link]
