@@ -7,14 +7,15 @@
     <meta name="description" content="一个关于创造、技术与日常思考的个人空间。">
     <title>Loren's Galaxy</title>
     <link rel="icon" type="image/png" sizes="128x128" href="./assets/lorens-saturn-favicon.png?v=20260921-1">
-    <link rel="stylesheet" href="./styles.css?v=20260922-1">
+    <link rel="preload" href="./vendor/fonts/noto-serif-sc-subset.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="./styles.css?v=20260922-22">
     <script src="./vendor/three.min.js" defer></script>
     <script src="./content.js?v=20260921-9" defer></script>
-    <script src="./app.js?v=20260921-3" defer></script>
+    <script src="./app.js?v=20260922-4" defer></script>
     <script src="./globe-renderer.js" defer></script>
-    <script src="./cosmos.js?v=20260922-2" defer></script>
-    <script src="./solar-system-3d.js?v=20260921-10" defer></script>
-    <script src="./page-scenes.js?v=20260922-3" defer></script>
+    <script src="./cosmos.js?v=20260922-17" defer></script>
+    <script src="./solar-system-3d.js?v=20260922-15" defer></script>
+    <script src="./page-scenes.js?v=20260922-12" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳转到内容</a>
@@ -23,7 +24,7 @@
       <header class="site-header">
         <a class="wordmark" href="#home" aria-label="返回首页" data-site-name>loren<span>.</span></a>
         <nav class="desktop-nav" aria-label="主导航">
-          <a href="#home" data-nav="home"><span class="celestial-icon celestial-icon-sun" aria-hidden="true"></span>首页</a>
+          <a href="#home" data-nav="home"><span class="celestial-icon celestial-icon-sun" data-motion="static" aria-hidden="true"></span>首页</a>
           <a href="#about" data-nav="about"><span class="celestial-icon" data-celestial-icon="mercury" aria-hidden="true"></span>关于 <span class="nav-en">About</span></a>
           <a href="#writing" data-nav="writing"><span class="celestial-icon" data-celestial-icon="moon" aria-hidden="true"></span>文字 <span class="nav-en">Writing</span></a>
           <a href="#projects" data-nav="projects"><span class="celestial-icon" data-celestial-icon="earth" aria-hidden="true"></span>作品 <span class="nav-en">Projects</span></a>
@@ -56,7 +57,7 @@
         </div>
       </header>
       <nav class="mobile-nav" id="mobile-nav" aria-label="移动端导航" hidden>
-        <a href="#home" data-nav="home"><span class="celestial-icon celestial-icon-sun" aria-hidden="true"></span>首页 <span>Home</span></a>
+        <a href="#home" data-nav="home"><span class="celestial-icon celestial-icon-sun" data-motion="static" aria-hidden="true"></span>首页 <span>Home</span></a>
         <a href="#about" data-nav="about"><span class="celestial-icon" data-celestial-icon="mercury" aria-hidden="true"></span>关于 <span>About</span></a>
         <a href="#writing" data-nav="writing"><span class="celestial-icon" data-celestial-icon="moon" aria-hidden="true"></span>文字 <span>Writing</span></a>
         <a href="#projects" data-nav="projects"><span class="celestial-icon" data-celestial-icon="earth" aria-hidden="true"></span>作品 <span>Projects</span></a>

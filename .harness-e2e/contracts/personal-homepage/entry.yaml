@@ -14,6 +14,15 @@ cases:
       - id: home-ready
         type: visible
         description: 首页显示自我介绍、作品入口和太阳导航图标。
+      - id: static-navigation-sun
+        type: visible
+        description: 导航栏的太阳图标保持静止，不执行旋转动画。
+      - id: home-fast-startup
+        type: visible
+        description: 首页刷新后在 3 秒内完成 Three.js 太阳系初始化，不长时间停留在空轨道骨架状态。
+      - id: progressive-planet-textures
+        type: interactive
+        description: 首页先以 256 像素预览纹理快速显示太阳系，再在浏览器空闲时逐颗升级到 1024 像素高清纹理。
       - id: galaxy-browser-title
         type: visible
         description: 浏览器标签页在首页、栏目页和详情页始终显示 Loren's Galaxy。

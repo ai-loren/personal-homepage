@@ -205,6 +205,8 @@
   const pickables = [sun];
   const orbitMaterials = new Map();
   const geometryCache = new Map();
+  const surfaceMaterials = new Map();
+  const cloudMaterials = new Map();
   const getSphere = (segments) => {
     if (!geometryCache.has(segments)) geometryCache.set(segments, new THREE.SphereGeometry(1, segments, Math.round(segments * .68)));
     return geometryCache.get(segments);
@@ -270,6 +272,7 @@
       roughness: config.body === 'earth' ? .68 : rocky ? .92 : gassy ? .78 : .84,
       metalness: 0,
     });
+    surfaceMaterials.set(config.body, material);
     const mesh = new THREE.Mesh(getSphere(config.radius > .5 ? 96 : 72), material);
     mesh.scale.setScalar(config.radius);
     mesh.position.x = config.orbit;
@@ -297,13 +300,15 @@
       mesh.add(atmosphere);
       const cloudData = textures.earth?.details;
       if (cloudData) {
-        const clouds = new THREE.Mesh(getSphere(64), new THREE.MeshStandardMaterial({
+        const cloudMaterial = new THREE.MeshStandardMaterial({
           map: cloudTextureFromImageData(cloudData),
           transparent: true,
           opacity: .72,
           depthWrite: false,
           roughness: 1,
-        }));
+        });
+        cloudMaterials.set('earth', cloudMaterial);
+        const clouds = new THREE.Mesh(getSphere(64), cloudMaterial);
         clouds.scale.setScalar(1.018);
         clouds.userData.cloudLayer = true;
         mesh.add(clouds);
@@ -317,6 +322,7 @@
         bumpScale: .045,
         roughness: 1,
       });
+      surfaceMaterials.set('moon', moonMaterial);
       const moon = new THREE.Mesh(getSphere(48), moonMaterial);
       moon.scale.setScalar(.09 / config.radius);
       moon.position.x = 1.72;
@@ -336,6 +342,26 @@
     items.push({ body: config.body, object: mesh, pivot, speed: config.speed, baseScale: config.radius, href: config.href, orbit: config.orbit, trail: { line: trailLine, positions: trailPos, segments: trailSegments } });
   };
   bodies.forEach(makeBody);
+  window.addEventListener('cosmos:texture-refined', (event) => {
+    const { kind, textures: refinedTextures } = event.detail || {};
+    const material = surfaceMaterials.get(kind);
+    if (!kind || !refinedTextures?.surface || !material) return;
+    const oldMap = material.map;
+    const oldBumpMap = material.bumpMap;
+    material.map = textureFromImageData(refinedTextures.surface);
+    material.bumpMap = heightTextureFromImageData(refinedTextures.surface);
+    material.needsUpdate = true;
+    oldMap?.dispose();
+    oldBumpMap?.dispose();
+
+    const cloudMaterial = cloudMaterials.get(kind);
+    if (cloudMaterial && refinedTextures.details) {
+      const oldCloudMap = cloudMaterial.map;
+      cloudMaterial.map = cloudTextureFromImageData(refinedTextures.details);
+      cloudMaterial.needsUpdate = true;
+      oldCloudMap?.dispose();
+    }
+  });
 
   // 小行星带：填充火星(3.5)与木星(4.95)之间的空白，是真实太阳系特征。用一组绕行的小点表现。
   const beltGroup = new THREE.Group();
@@ -1307,5 +1333,9 @@
   universe.dataset.hoverRelease = 'bounded-fast-return-v2';
   universe.dataset.cameraState = 'overview';
   universe.dataset.ufoControls = 'hidden';
+  const startupMs = performance.now();
+  universe.dataset.startupMs = String(Math.round(startupMs));
+  universe.dataset.startupPerformance = startupMs < 3000 ? 'fast' : 'slow';
+  window.dispatchEvent(new CustomEvent('cosmos:three-ready'));
   requestAnimationFrame(animate);
 })();

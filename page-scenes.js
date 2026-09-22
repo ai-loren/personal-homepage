@@ -624,6 +624,14 @@
     if (!frame) frame = requestAnimationFrame(animate);
   }
 
+  window.addEventListener('cosmos:texture-refined', (event) => {
+    const kind = event.detail?.kind;
+    if (!kind) return;
+    for (const key of spriteCache.keys()) {
+      if (key.startsWith(`${kind}:`)) spriteCache.delete(key);
+    }
+    if (sceneByPage[root.dataset.page]?.body === kind) draw();
+  });
   new MutationObserver(() => {
     draw();
     requestAnimation();

@@ -83,8 +83,8 @@ cases:
         implements: [home-location-bilingual]
       - id: home-sun-icon-visible
         action: assertVisible
-        target: '.desktop-nav [data-nav="home"] .celestial-icon-sun'
-        implements: [home-ready]
+        target: '.desktop-nav [data-nav="home"] .celestial-icon-sun[data-motion="static"]'
+        implements: [home-ready, static-navigation-sun]
       - id: solar-canvas-visible
         action: assertVisible
         target: '.solar-surface[data-renderer="canvas"]'
@@ -98,6 +98,14 @@ cases:
         action: assertVisible
         target: '.hero:has(.universe.three-ready[data-scene="three"]) .solar-system-3d'
         implements: [three-dimensional-system]
+      - id: home-startup-fast
+        action: assertVisible
+        target: '.universe.three-ready[data-startup-performance="fast"]'
+        implements: [home-fast-startup]
+      - id: progressive-textures-started
+        action: assertVisible
+        target: '.universe[data-texture-strategy="progressive"][data-texture-initial-width="256"][data-texture-final-width="1024"]'
+        implements: [progressive-planet-textures]
       - id: three-scene-fitted
         action: assertVisible
         target: '.hero:has(.universe.three-ready[data-scene="three"][data-layout="fitted"]) .solar-system-3d'
@@ -548,3 +556,7 @@ cases:
         action: assertVisible
         target: '#contact-details .github-link[href="https://github.com/Jeff-Zzh"][target="_blank"][rel~="noopener"]'
         implements: [github-profile-link]
+      - id: progressive-textures-complete
+        action: assertVisible
+        target: 'html:has(.universe[data-texture-quality="high"][data-texture-progress="9/9"])'
+        implements: [progressive-planet-textures]

@@ -10,11 +10,21 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const textureStore = window.COSMOS_TEXTURES = window.COSMOS_TEXTURES || {};
   const textureCache = new Map();
+  const globeTextureUpdaters = new Map();
+  const previewTextureWidth = 256;
+  const finalTextureWidth = 1024;
   const tau = Math.PI * 2;
   let seed = 91731;
   const random = () => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
+  };
+  const seededRandom = (initialSeed) => {
+    let value = initialSeed >>> 0;
+    return () => {
+      value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
+      return value / 4294967296;
+    };
   };
   const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
   const mix = (a, b, amount) => a + (b - a) * amount;
@@ -149,10 +159,16 @@
     return draw;
   }
 
-  function makeTexture(kind) {
-    if (textureCache.has(kind)) return textureCache.get(kind);
-    const textureWidth = 2048;
+  function makeTexture(kind, textureWidth = previewTextureWidth) {
+    const cacheKey = `${kind}:${textureWidth}`;
+    if (textureCache.has(cacheKey)) return textureCache.get(cacheKey);
     const textureHeight = textureWidth / 2;
+    const resolutionScale = textureWidth / finalTextureWidth;
+    const canonicalWidth = finalTextureWidth;
+    const canonicalHeight = finalTextureWidth / 2;
+    const craterRandom = seededRandom(
+      [...kind].reduce((value, character) => value * 31 + character.charCodeAt(0), 91731),
+    );
     const canvas = document.createElement('canvas');
     canvas.width = textureWidth;
     canvas.height = textureHeight;
@@ -196,13 +212,23 @@
       const latitude = 90 - y / textureHeight * 180;
       for (let x = 0; x < textureWidth; x++) {
         const offset = (y * textureWidth + x) * 4;
-        const fine = terrain(x / 26, y / 26);
-        const grain = terrainHi(x / 6, y / 6);
+        const canonicalX = x / resolutionScale;
+        const canonicalY = y / resolutionScale;
+        const fine = terrain(canonicalX / 26, canonicalY / 26);
+        const grain = terrainHi(canonicalX / 6, canonicalY / 6);
         let color;
         if (kind === 'earth') {
           const longitude = x / textureWidth * 360 - 180;
-          const warpX = Math.round(clamp(x + (noise(x / 20, y / 20) - .5) * 8, 0, textureWidth - 1));
-          const warpY = Math.round(clamp(y + (noise(y / 18, x / 18) - .5) * 6, 0, textureHeight - 1));
+          const warpX = Math.round(clamp(
+            x + (noise(canonicalX / 20, canonicalY / 20) - .5) * 8 * resolutionScale,
+            0,
+            textureWidth - 1,
+          ));
+          const warpY = Math.round(clamp(
+            y + (noise(canonicalY / 18, canonicalX / 18) - .5) * 6 * resolutionScale,
+            0,
+            textureHeight - 1,
+          ));
           const isLand = land[(warpY * textureWidth + warpX) * 4 + 3] > 100;
           details.data[offset + 1] = isLand ? 255 : 0;
           if (isLand) {
@@ -214,26 +240,32 @@
             const sand = [160 + fine * 43 + relief, 139 + fine * 35 + relief, 94 + fine * 32 + relief * .7];
             color = green.map((channel, index) => mix(channel, sand[index], Math.sqrt(dry)));
           } else {
-            const depth = terrainHi(x / 40, y / 40);
+            const depth = terrainHi(canonicalX / 40, canonicalY / 40);
             color = [10 + fine * 12 + depth * 10, 44 + fine * 18 + depth * 14, 74 + fine * 32 + depth * 20];
           }
           if (latitude < -70 || latitude > 76) {
             const ice = clamp((Math.abs(latitude) - 70) / 11 + fine * .2);
             color = color.map((channel) => mix(channel, 224, ice));
           }
-          const cloudX = x / 78 + Math.sin(y / 68) * 1.3;
-          const cloud = terrain(cloudX, y / 46 + Math.sin(x / 116) * .8);
+          const cloudX = canonicalX / 78 + Math.sin(canonicalY / 68) * 1.3;
+          const cloud = terrain(
+            cloudX,
+            canonicalY / 46 + Math.sin(canonicalX / 116) * .8,
+          );
           const cover = clamp((cloud - .52) * 5);
           const filaments = terrainHi(x / 12, y / 9) * .34 + .66;
           details.data[offset] = cover * filaments * 255;
           const settled = isLand && Math.abs(latitude) < 60 && Math.abs(latitude) > 10 && fine > .57;
           details.data[offset + 2] = settled && hash(x, y) > .94 ? Math.pow(hash(y, x), 2) * 255 : 0;
         } else if (kind === 'jupiter') {
-          const turb = (terrainHi(x / 30, y / 60) - .5) * 9;
-          const band = Math.sin((y + turb) / 14.4) * .5 + Math.sin((y + turb) / 38 + fine * 4) * .22;
-          const swirl = (terrainHi(x / 10, y / 20) - .5) * 26;
-          const stormX = ((x - textureWidth * .62 + textureWidth * .5) % textureWidth) - textureWidth * .5;
-          const stormY = y - textureHeight * .64;
+          const turb = (terrainHi(canonicalX / 30, canonicalY / 60) - .5) * 9;
+          const band = Math.sin((canonicalY + turb) / 14.4) * .5
+            + Math.sin((canonicalY + turb) / 38 + fine * 4) * .22;
+          const swirl = (terrainHi(canonicalX / 10, canonicalY / 20) - .5) * 26;
+          const stormX = (
+            (canonicalX - canonicalWidth * .62 + canonicalWidth * .5) % canonicalWidth
+          ) - canonicalWidth * .5;
+          const stormY = canonicalY - canonicalHeight * .64;
           const storm = clamp(1 - Math.sqrt((stormX / 132) ** 2 + (stormY / 46) ** 2));
           color = [
             173 + band * 45 + fine * 24 + storm * 42 + swirl,
@@ -241,42 +273,50 @@
             101 + band * 27 + fine * 18 - storm * 32 + swirl * .6,
           ];
         } else if (kind === 'saturn') {
-          const turb = (terrainHi(x / 34, y / 66) - .5) * 7;
-          const band = Math.sin((y + turb) / 11) * .42 + Math.sin((y + turb) / 32) * .2;
-          const swirl = (terrainHi(x / 12, y / 22) - .5) * 16;
+          const turb = (terrainHi(canonicalX / 34, canonicalY / 66) - .5) * 7;
+          const band = Math.sin((canonicalY + turb) / 11) * .42
+            + Math.sin((canonicalY + turb) / 32) * .2;
+          const swirl = (terrainHi(canonicalX / 12, canonicalY / 22) - .5) * 16;
           color = [183 + band * 35 + fine * 18 + swirl, 157 + band * 30 + fine * 15 + swirl * .85, 111 + band * 23 + fine * 12 + swirl * .6];
         } else if (kind === 'venus') {
-          const swirl = terrain(x / 48 + Math.sin(y / 44), y / 24);
-          const wisp = (terrainHi(x / 9, y / 14) - .5) * 22;
+          const swirl = terrain(
+            canonicalX / 48 + Math.sin(canonicalY / 44),
+            canonicalY / 24,
+          );
+          const wisp = (terrainHi(canonicalX / 9, canonicalY / 14) - .5) * 22;
           color = [179 + swirl * 50 + wisp, 132 + swirl * 43 + wisp * .8, 68 + swirl * 31 + wisp * .5];
         } else if (kind === 'uranus') {
-          const turb = (terrainHi(x / 40, y / 80) - .5) * 5;
-          const band = Math.sin((y + turb) / 24) * 4 + fine * 8;
-          const wisp = (terrainHi(x / 14, y / 26) - .5) * 10;
+          const turb = (terrainHi(canonicalX / 40, canonicalY / 80) - .5) * 5;
+          const band = Math.sin((canonicalY + turb) / 24) * 4 + fine * 8;
+          const wisp = (terrainHi(canonicalX / 14, canonicalY / 26) - .5) * 10;
           color = [116 + band + wisp, 184 + band + wisp, 190 + band + wisp];
         } else if (kind === 'neptune') {
-          const turb = (terrainHi(x / 30, y / 60) - .5) * 8;
-          const band = Math.sin((y + turb) / 16 + fine * 2) * 10;
-          const wisp = (terrainHi(x / 11, y / 18) - .5) * 16;
-          const stormX = ((x - textureWidth * .57 + textureWidth * .5) % textureWidth) - textureWidth * .5;
-          const stormY = y - textureHeight * .56;
+          const turb = (terrainHi(canonicalX / 30, canonicalY / 60) - .5) * 8;
+          const band = Math.sin((canonicalY + turb) / 16 + fine * 2) * 10;
+          const wisp = (terrainHi(canonicalX / 11, canonicalY / 18) - .5) * 16;
+          const stormX = (
+            (canonicalX - canonicalWidth * .57 + canonicalWidth * .5) % canonicalWidth
+          ) - canonicalWidth * .5;
+          const stormY = canonicalY - canonicalHeight * .56;
           const storm = clamp(1 - Math.sqrt((stormX / 84) ** 2 + (stormY / 34) ** 2));
           color = [31 + fine * 20 - storm * 14 + wisp * .5, 83 + band + fine * 19 - storm * 32 + wisp, 157 + band + fine * 38 - storm * 51 + wisp];
         } else if (kind === 'mars') {
-          const broad = terrain(x / 88, y / 70);
-          const rock = (terrainHi(x / 8, y / 8) - .5) * 30;
+          const broad = terrain(canonicalX / 88, canonicalY / 70);
+          const rock = (terrainHi(canonicalX / 8, canonicalY / 8) - .5) * 30;
           const polar = clamp((Math.abs(latitude) - 72) / 10);
           color = [128 + fine * 57 - broad * 18 + rock, 56 + fine * 35 - broad * 12 + rock * .7, 32 + fine * 24 - broad * 8 + rock * .5];
           color = color.map((channel) => mix(channel, 207, polar));
         } else if (kind === 'mercury') {
-          const broad = terrain(x / 118, y / 92);
-          const rock = (terrainHi(x / 6.5, y / 6.5) - .5) * 44;
-          const basin = clamp((.5 - terrain(x / 58, y / 46)) * 2.6);
+          const broad = terrain(canonicalX / 118, canonicalY / 92);
+          const rock = (terrainHi(canonicalX / 6.5, canonicalY / 6.5) - .5) * 44;
+          const basin = clamp(
+            (.5 - terrain(canonicalX / 58, canonicalY / 46)) * 2.6,
+          );
           const shade = 152 + fine * 58 - clamp((.52 - broad) * 4) * 64 + rock;
           color = [shade * 1.1 - basin * 26, shade * .92 - basin * 22, shade * .72 - basin * 17];
         } else {
-          const broad = terrain(x / 122, y / 96);
-          const rock = (terrainHi(x / 7, y / 7) - .5) * 34;
+          const broad = terrain(canonicalX / 122, canonicalY / 96);
+          const rock = (terrainHi(canonicalX / 7, canonicalY / 7) - .5) * 34;
           const shade = 148 + fine * 62 - clamp((.52 - broad) * 4) * 100 + rock;
           color = [shade * 1.03, shade * 1.015, shade * .97];
         }
@@ -289,11 +329,12 @@
     }
     context.putImageData(image, 0, 0);
     if (['moon', 'mercury', 'mars'].includes(kind)) {
-      const craterCount = kind === 'moon' ? 6400 : kind === 'mercury' ? 4200 : 1300;
+      const baseCraterCount = kind === 'moon' ? 6400 : kind === 'mercury' ? 4200 : 1300;
+      const craterCount = Math.round(baseCraterCount * resolutionScale * resolutionScale);
       for (let index = 0; index < craterCount; index++) {
-        const x = random() * textureWidth;
-        const y = random() * textureHeight;
-        const radius = 1 + Math.pow(random(), 3.5) * 20;
+        const x = craterRandom() * textureWidth;
+        const y = craterRandom() * textureHeight;
+        const radius = (.7 + Math.pow(craterRandom(), 3.5) * 20) * resolutionScale;
         context.save();
         context.translate(x, y);
         context.scale(1, .82);
@@ -313,7 +354,7 @@
       }
     }
     const textures = { surface: context.getImageData(0, 0, textureWidth, textureHeight), details };
-    textureCache.set(kind, textures);
+    textureCache.set(cacheKey, textures);
     return textures;
   }
 
@@ -321,12 +362,12 @@
     const kind = canvas.dataset.world;
     const context = canvas.getContext('2d');
     if (!context) return null;
-    const textures = makeTexture(kind);
+    let textures = makeTexture(kind);
     if (!textures) return null;
     textureStore[kind] = textures;
-    const textureWidth = textures.surface.width;
-    const textureHeight = textures.surface.height;
-    const texture = textures.surface.data;
+    let textureWidth = textures.surface.width;
+    let textureHeight = textures.surface.height;
+    let texture = textures.surface.data;
     const size = canvas.width;
     const image = context.createImageData(size, size);
     const pixels = [];
@@ -344,8 +385,9 @@
         const offset = (y * size + x) * 4;
         image.data[offset + 3] = clamp((1 - radius) * size) * 255;
         pixels.push({
-          offset, u: (longitude / tau + .5) * textureWidth,
-          row: Math.min(textureHeight - 1, Math.floor((.5 - latitude / Math.PI) * textureHeight)) * textureWidth,
+          offset,
+          u: longitude / tau + .5,
+          v: .5 - latitude / Math.PI,
           light: .075 + Math.pow(light, .85) * .96, rim,
         });
       }
@@ -358,9 +400,14 @@
       return icon.getContext('2d');
     });
     const drawFallback = (elapsed, updateIcons = false) => {
-      const shift = (elapsed / (kind === 'earth' ? 180000 : 260000) * textureWidth + (kind === 'earth' ? .0234 : .3) * textureWidth) % textureWidth;
+      const shift = (
+        elapsed / (kind === 'earth' ? 180000 : 260000)
+        + (kind === 'earth' ? .0234 : .3)
+      ) % 1;
       for (const pixel of pixels) {
-        const offset = (pixel.row + Math.floor((pixel.u + shift) % textureWidth)) * 4;
+        const row = Math.min(textureHeight - 1, Math.floor(pixel.v * textureHeight));
+        const column = Math.floor(((pixel.u + shift) % 1) * textureWidth);
+        const offset = (row * textureWidth + column) * 4;
         const clouds = textures.details.data[offset] / 255;
         image.data[pixel.offset] = mix(texture[offset], 226, clouds) * pixel.light + pixel.rim * 65;
         image.data[pixel.offset + 1] = mix(texture[offset + 1], 233, clouds) * pixel.light + pixel.rim * 137;
@@ -383,7 +430,14 @@
       renderer = null;
       drawFallback(renderedElapsed);
     }) : null;
-    return (elapsed) => {
+    globeTextureUpdaters.set(kind, (nextTextures) => {
+      textures = nextTextures;
+      textureWidth = textures.surface.width;
+      textureHeight = textures.surface.height;
+      texture = textures.surface.data;
+      drawFallback(renderedElapsed, true);
+    });
+    const draw = (elapsed) => {
       const delta = sourceElapsed === 0 ? 0 : clamp(elapsed - sourceElapsed, 0, 120);
       sourceElapsed = elapsed;
       const focused = interactiveNode?.matches(':hover, :focus-within') ?? false;
@@ -391,12 +445,88 @@
       if (renderer) renderer.draw(renderedElapsed);
       else drawFallback(renderedElapsed);
     };
+    draw.destroyGPU = () => {
+      renderer?.destroy();
+      renderer = null;
+    };
+    return draw;
   }
 
+  const globeCanvases = [...document.querySelectorAll('[data-world]')];
   const cosmicRenderers = [
     createSun(document.querySelector('.solar-surface')),
-    ...[...document.querySelectorAll('[data-world]')].map(createGlobe),
+    ...globeCanvases.map(createGlobe),
   ].filter(Boolean);
+  window.addEventListener('cosmos:three-ready', () => {
+    cosmicRenderers.forEach((draw) => draw.destroyGPU?.());
+  }, { once: true });
+  const textureKinds = [...new Set(globeCanvases.map((canvas) => canvas.dataset.world))];
+  const refinementPriority = [
+    'jupiter',
+    'saturn',
+    'earth',
+    'neptune',
+    'uranus',
+    'venus',
+    'mars',
+    'mercury',
+    'moon',
+  ].filter((kind) => textureKinds.includes(kind));
+  let refinedTextureCount = 0;
+  let lastTextureInteractionAt = performance.now();
+  universe.dataset.textureStrategy = 'progressive';
+  universe.dataset.textureInitialWidth = String(previewTextureWidth);
+  universe.dataset.textureFinalWidth = String(finalTextureWidth);
+  universe.dataset.textureQuality = 'preview';
+  universe.dataset.textureProgress = `0/${refinementPriority.length}`;
+
+  const scheduleIdle = (callback) => {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(callback, { timeout: 300 });
+    } else {
+      window.setTimeout(callback, 80);
+    }
+  };
+  const refineNextTexture = () => {
+    const inputPending = navigator.scheduling?.isInputPending?.({
+      includeContinuous: true,
+    }) ?? false;
+    const interactionActive = performance.now() - lastTextureInteractionAt < 800
+      || inputPending;
+    if (interactionActive) {
+      scheduleIdle(refineNextTexture);
+      return;
+    }
+    const kind = refinementPriority.shift();
+    if (!kind) {
+      universe.dataset.textureQuality = 'high';
+      return;
+    }
+    universe.dataset.textureQuality = 'refining';
+    const refinedTextures = makeTexture(kind, finalTextureWidth);
+    textureStore[kind] = refinedTextures;
+    textureCache.delete(`${kind}:${previewTextureWidth}`);
+    globeTextureUpdaters.get(kind)?.(refinedTextures);
+    refinedTextureCount += 1;
+    universe.dataset.textureProgress = `${refinedTextureCount}/${textureKinds.length}`;
+    window.dispatchEvent(new CustomEvent('cosmos:texture-refined', {
+      detail: { kind, textures: refinedTextures },
+    }));
+    if (refinementPriority.length) {
+      scheduleIdle(refineNextTexture);
+    } else {
+      universe.dataset.textureQuality = 'high';
+    }
+  };
+  const startTextureRefinement = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => scheduleIdle(refineNextTexture)));
+  };
+  const noteTextureInteraction = () => {
+    lastTextureInteractionAt = performance.now();
+  };
+  window.addEventListener('pointermove', noteTextureInteraction, { passive: true });
+  window.addEventListener('pointerdown', noteTextureInteraction, { passive: true });
+  window.addEventListener('keydown', noteTextureInteraction);
   const stars = Array.from({ length: 160 }, () => ({
     x: random(), y: random(), radius: .35 + random() * 1.05,
     phase: random() * tau, speed: .35 + random() * .7,
@@ -572,4 +702,5 @@
   window.addEventListener('pageshow', syncMotion);
   resize();
   syncMotion();
+  startTextureRefinement();
 })();

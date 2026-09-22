@@ -1,0 +1,37 @@
+version: 1
+capability:
+  id: personal-homepage-mobile
+  name: 个人主页移动端适配
+environment:
+  targetUrl: http://127.0.0.1:4177
+  viewport:
+    width: 390
+    height: 844
+cases:
+  - id: mobile-browse-personal-space
+    description: 手机访客打开个人主页，使用移动导航浏览各栏目，并阅读文章、作品与联系信息。
+    assertions:
+      - id: mobile-layout-ready
+        type: visible
+        description: 390 像素宽手机视口下页面进入 mobile 布局，且不存在横向溢出。
+      - id: mobile-header-ready
+        type: visible
+        description: 顶部只显示品牌、主题按钮和菜单按钮，桌面导航与动效按钮隐藏，操作区不溢出屏幕。
+      - id: mobile-menu-usable
+        type: interactive
+        description: 点击菜单按钮后出现双列移动导航，选择栏目后菜单关闭并进入目标页面。
+      - id: mobile-home-readable
+        type: visible
+        description: 首页头像、标题、标语、职位地区、学历入口和操作按钮在手机上完整可读，不被裁切。
+      - id: mobile-solar-system-contained
+        type: visible
+        description: 首页太阳系舞台在手机宽度内显示，3D 或 2D 回退都不能导致横向滚动。
+      - id: mobile-content-sections-readable
+        type: visible
+        description: 关于、作品、实验、经历、收藏和随想栏目在手机上以单列内容展示，关键卡片可读。
+      - id: mobile-reader-dialog
+        type: interactive
+        description: 手机端文章详情弹窗宽度适配视口，正文可读且可以关闭。
+      - id: mobile-contact-accessible
+        type: interactive
+        description: 手机端可以打开联系方式弹窗，并看到 GitHub 个人主页入口。

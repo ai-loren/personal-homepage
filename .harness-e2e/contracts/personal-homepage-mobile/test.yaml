@@ -1,0 +1,154 @@
+version: 1
+runtime:
+  engine: playwright
+  agent: playwright
+  timeoutMs: 120000
+environment:
+  targetUrl: http://127.0.0.1:4177
+  viewport:
+    width: 390
+    height: 844
+cases:
+  - id: personal-space-mobile-visitor
+    entryCaseId: mobile-browse-personal-space
+    name: 手机端浏览个人空间
+    steps:
+      - id: mobile-state-ready
+        action: assertVisible
+        target: 'html[data-viewport="mobile"][data-mobile-overflow="false"]'
+        implements: [mobile-layout-ready]
+      - id: mobile-title-visible
+        action: assertVisible
+        target: '#home-title'
+        implements: [mobile-home-readable]
+      - id: desktop-nav-hidden
+        action: assertHidden
+        target: '.desktop-nav'
+        implements: [mobile-header-ready]
+      - id: mobile-motion-hidden
+        action: assertHidden
+        target: '.motion-toggle'
+        implements: [mobile-header-ready]
+      - id: mobile-header-controls-visible
+        action: assertVisible
+        target: '.site-header:has(.theme-toggle):has(.menu-toggle)'
+        implements: [mobile-header-ready]
+      - id: mobile-home-profile-visible
+        action: assertVisible
+        target: '.hero-copy:has(.hero-portrait img):has(.hero-intro):has(.hero-profile-meta):has(.hero-education):has(.hero-actions)'
+        implements: [mobile-home-readable]
+      - id: mobile-role-visible
+        action: assertText
+        target: '.hero-profile-meta [data-profile="role"]'
+        value: Bytedance Seed AI Infra Engineer
+        implements: [mobile-home-readable]
+      - id: mobile-location-visible
+        action: assertText
+        target: '.hero-profile-location'
+        value: CHINA · SHANGHAI
+        implements: [mobile-home-readable]
+      - id: mobile-solar-ready
+        action: assertVisible
+        target: 'html[data-mobile-overflow="false"] .universe'
+        implements: [mobile-solar-system-contained]
+      - id: open-mobile-menu
+        action: click
+        target: '.menu-toggle'
+      - id: mobile-menu-visible
+        action: assertVisible
+        target: 'html[data-mobile-menu="open"] .mobile-nav:not([hidden])'
+        implements: [mobile-menu-usable]
+      - id: open-mobile-about
+        action: click
+        target: '.mobile-nav [data-nav="about"]'
+      - id: mobile-about-visible
+        action: assertVisible
+        target: 'html[data-mobile-menu="closed"][data-page="about"][data-mobile-overflow="false"] #about-content .about-facts'
+        implements: [mobile-menu-usable, mobile-content-sections-readable]
+      - id: reopen-mobile-menu-projects
+        action: click
+        target: '.menu-toggle'
+      - id: open-mobile-projects
+        action: click
+        target: '.mobile-nav [data-nav="projects"]'
+      - id: mobile-projects-visible
+        action: assertVisible
+        target: 'html[data-page="projects"][data-mobile-overflow="false"] #project-list .project-card:first-child'
+        implements: [mobile-content-sections-readable]
+      - id: mobile-project-dialog-open
+        action: click
+        target: '#project-list .project-card:first-child'
+      - id: mobile-project-dialog-readable
+        action: assertVisible
+        target: '.reader-dialog[open] .reader-content'
+        implements: [mobile-reader-dialog]
+      - id: close-mobile-project-dialog
+        action: click
+        target: '#reader-close'
+      - id: reopen-mobile-menu-writing
+        action: click
+        target: '.menu-toggle'
+      - id: open-mobile-writing
+        action: click
+        target: '.mobile-nav [data-nav="writing"]'
+      - id: mobile-writing-visible
+        action: assertVisible
+        target: 'html[data-page="writing"][data-mobile-overflow="false"] #writing-list .writing-item:first-child'
+        implements: [mobile-content-sections-readable]
+      - id: mobile-article-open
+        action: click
+        target: '#writing-list .writing-item:first-child'
+      - id: mobile-article-readable
+        action: assertVisible
+        target: '.reader-dialog[open] .reader-body'
+        implements: [mobile-reader-dialog]
+      - id: close-mobile-article-dialog
+        action: click
+        target: '#reader-close'
+      - id: reopen-mobile-menu-lab
+        action: click
+        target: '.menu-toggle'
+      - id: open-mobile-lab
+        action: click
+        target: '.mobile-nav [data-nav="lab"]'
+      - id: mobile-lab-visible
+        action: assertVisible
+        target: 'html[data-page="lab"][data-mobile-overflow="false"] #experiment-list .experiment-card:first-child'
+        implements: [mobile-content-sections-readable]
+      - id: reopen-mobile-menu-journey
+        action: click
+        target: '.menu-toggle'
+      - id: open-mobile-journey
+        action: click
+        target: '.mobile-nav [data-nav="journey"]'
+      - id: mobile-journey-visible
+        action: assertVisible
+        target: 'html[data-page="journey"][data-mobile-overflow="false"] #work-experience-list .experience-role:first-child'
+        implements: [mobile-content-sections-readable]
+      - id: reopen-mobile-menu-library
+        action: click
+        target: '.menu-toggle'
+      - id: open-mobile-library
+        action: click
+        target: '.mobile-nav [data-nav="library"]'
+      - id: mobile-library-visible
+        action: assertVisible
+        target: 'html[data-page="library"][data-mobile-overflow="false"] #library-list .library-item:first-child'
+        implements: [mobile-content-sections-readable]
+      - id: reopen-mobile-menu-ideas
+        action: click
+        target: '.menu-toggle'
+      - id: open-mobile-ideas
+        action: click
+        target: '.mobile-nav [data-nav="ideas"]'
+      - id: mobile-ideas-visible
+        action: assertVisible
+        target: 'html[data-page="ideas"][data-mobile-overflow="false"] #ideas-list .idea-item:first-child'
+        implements: [mobile-content-sections-readable]
+      - id: mobile-contact-open
+        action: click
+        target: '#contact-open'
+      - id: mobile-contact-github-visible
+        action: assertVisible
+        target: '.contact-dialog[open] .github-link[href="https://github.com/Jeff-Zzh"]'
+        implements: [mobile-contact-accessible]

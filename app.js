@@ -47,6 +47,17 @@
   let articleCategory = '全部';
   let projectCategory = '全部';
   let toastTimer;
+  const mobileViewport = matchMedia('(max-width: 760px)');
+
+  function syncResponsiveState() {
+    const isMobile = mobileViewport.matches;
+    document.documentElement.dataset.viewport = isMobile ? 'mobile' : 'desktop';
+    requestAnimationFrame(() => {
+      document.documentElement.dataset.mobileOverflow = isMobile
+        ? String(document.documentElement.scrollWidth > window.innerWidth + 1)
+        : 'false';
+    });
+  }
 
   document.title = profile.siteTitle;
   $('meta[name="description"]').content = profile.description;
@@ -94,17 +105,28 @@
 
   function closeMenu() {
     $('#mobile-nav').hidden = true;
+    document.body.classList.remove('mobile-menu-open');
     $('.menu-toggle').setAttribute('aria-expanded', 'false');
     $('.menu-toggle').setAttribute('aria-label', '打开导航');
+    document.documentElement.dataset.mobileMenu = 'closed';
+    syncResponsiveState();
   }
   $('.menu-toggle').addEventListener('click', () => {
     const willOpen = $('#mobile-nav').hidden;
     $('#mobile-nav').hidden = !willOpen;
+    document.body.classList.toggle('mobile-menu-open', willOpen);
     $('.menu-toggle').setAttribute('aria-expanded', String(willOpen));
     $('.menu-toggle').setAttribute('aria-label', willOpen ? '关闭导航' : '打开导航');
+    document.documentElement.dataset.mobileMenu = willOpen ? 'open' : 'closed';
+    syncResponsiveState();
   });
   $('#mobile-nav').addEventListener('click', (event) => {
     if (event.target.closest('a')) closeMenu();
+  });
+  document.addEventListener('click', (event) => {
+    if ($('#mobile-nav').hidden) return;
+    if (event.target.closest('#mobile-nav') || event.target.closest('.menu-toggle')) return;
+    closeMenu();
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !$('#mobile-nav').hidden) {
@@ -115,6 +137,9 @@
   matchMedia('(min-width: 761px)').addEventListener('change', (event) => {
     if (event.matches) closeMenu();
   });
+  mobileViewport.addEventListener('change', syncResponsiveState);
+  window.addEventListener('resize', syncResponsiveState);
+  window.addEventListener('load', syncResponsiveState);
 
   function renderFilters(selector, categories, selected, onSelect) {
     const container = $(selector);
@@ -364,6 +389,7 @@
       if (!item) $('#main').focus({ preventScroll: true });
     }
     syncModalLock();
+    syncResponsiveState();
   }
 
   $('#reader-close').addEventListener('click', () => reader.close());
@@ -437,5 +463,6 @@
   renderLibrary();
   renderIdeas();
   window.addEventListener('hashchange', route);
+  syncResponsiveState();
   route();
 })();
