@@ -894,7 +894,7 @@
         last.t = now;
       }
       node.style.setProperty('--scene-depth', `${clamp((1 - vector.z) * .68, .82, 1.08).toFixed(2)}`);
-      const hitSize = Math.max(46, radiusPixels * 2.25);
+      const hitSize = Math.max(46, radiusPixels * 2.0);
       if (!frozen && Math.abs(hitSize - (item.lastHit ?? NaN)) > 1) {
         node.style.setProperty('--hit-size', `${hitSize.toFixed(1)}px`);
         item.lastHit = hitSize;
@@ -910,12 +910,39 @@
     sunNode.style.setProperty('--scene-y', `${((-vector.y * .5 + .5) * rect.height + offsetY).toFixed(1)}px`);
   };
 
+  // Temp vectors reused each pick call to avoid allocation in hot path.
+  const _pickScreenPos = { x: 0, y: 0 };
+  const _pickWorldPos = new THREE.Vector3();
+  const _pickA = new THREE.Vector3();
+  const _pickB = new THREE.Vector3();
+  const screenDistFromPointer = (world) => {
+    _pickWorldPos.copy(world).project(camera);
+    _pickScreenPos.x = _pickWorldPos.x;
+    _pickScreenPos.y = _pickWorldPos.y;
+    return Math.hypot(pointer.x - _pickScreenPos.x, pointer.y - _pickScreenPos.y);
+  };
+
   const pick = () => {
     raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObjects(pickables, false)[0];
-    if (hit) {
+    const hits = raycaster.intersectObjects(pickables, false);
+    if (hits.length === 1) {
       emptyFrames = 0;
-      setHovered(hit.object.userData.body || null, 'raycast');
+      setHovered(hits[0].object.userData.body || null, 'raycast');
+    } else if (hits.length > 1) {
+      // When planets overlap on screen, pick the one whose 2D center is closest
+      // to the mouse — respects user intent over arbitrary 3D depth order.
+      let bestHit = hits[0];
+      let bestDist = screenDistFromPointer((objectByBody.get(hits[0].object.userData.body) || sun).getWorldPosition(_pickA));
+      for (let i = 1; i < hits.length; i++) {
+        const obj = objectByBody.get(hits[i].object.userData.body);
+        const dist = obj ? screenDistFromPointer(obj.getWorldPosition(_pickB)) : Infinity;
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestHit = hits[i];
+        }
+      }
+      emptyFrames = 0;
+      setHovered(bestHit.object.userData.body || null, 'raycast');
     } else if (hoveredBody) {
       emptyFrames += 1;
       if (emptyFrames > 6) setHovered(null);
