@@ -134,6 +134,17 @@
       }
       context.restore();
     };
+    const atomSize = Math.round(radius * 2);
+    const atomX = Math.round(center - radius);
+    const sunIcons = [...document.querySelectorAll('.celestial-icon-sun')].map((node) => {
+      const icon = document.createElement('canvas');
+      icon.width = 64;
+      icon.height = 64;
+      const iconCtx = icon.getContext('2d');
+      iconCtx.drawImage(surface, atomX, atomX, atomSize, atomSize, 2, 2, 60, 60);
+      node.append(icon);
+      return iconCtx;
+    });
     draw(0);
     return draw;
   }
