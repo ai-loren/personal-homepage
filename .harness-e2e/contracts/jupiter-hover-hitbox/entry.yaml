@@ -1,0 +1,16 @@
+version: 1
+capability:
+  id: jupiter-hover-hitbox
+  name: 木星可见边缘触碰
+environment:
+  targetUrl: http://127.0.0.1:4177
+  viewport:
+    width: 1280
+    height: 900
+cases:
+  - id: hover-jupiter-visible-edge
+    description: 访客将鼠标移动到木星可见球体边缘时，镜头立即聚焦木星，不必继续移动到球体中心。
+    assertions:
+      - id: jupiter-edge-focuses
+        type: interactive
+        description: 木星左侧可见边缘进入指针后，太阳系激活木星并将镜头切换为聚焦状态。

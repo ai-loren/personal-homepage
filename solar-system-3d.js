@@ -4,9 +4,10 @@
   const THREE = window.THREE;
   const universe = document.querySelector('.universe');
   const canvas = document.querySelector('.solar-system-3d');
+  const interactionStage = canvas?.closest('.hero') || universe;
   const textures = window.COSMOS_TEXTURES;
   const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
-  if (!THREE || !universe || !canvas || !textures?.earth) return;
+  if (!THREE || !universe || !canvas || !interactionStage || !textures?.earth) return;
 
   let renderer;
   try {
@@ -791,7 +792,7 @@
     const controlsVisible = Boolean(body && body !== 'sun');
     universe.dataset.ufoControls = controlsVisible ? 'visible' : 'hidden';
     ufoControls?.setAttribute('aria-hidden', String(!controlsVisible));
-    canvas.style.cursor = body && (bodyNodes.get(body)?.matches('a')) ? 'pointer' : 'default';
+    interactionStage.style.cursor = body && (bodyNodes.get(body)?.matches('a')) ? 'pointer' : 'default';
   };
   const pointerWithinNode = (node) => {
     if (!node || !Number.isFinite(pointerClient.x) || !Number.isFinite(pointerClient.y)) return false;
@@ -941,6 +942,7 @@
   const _pickWorldPos = new THREE.Vector3();
   const _pickA = new THREE.Vector3();
   const _pickB = new THREE.Vector3();
+  let raycastBodyAtPointer = null;
   const screenDistFromPointer = (world) => {
     _pickWorldPos.copy(world).project(camera);
     _pickScreenPos.x = _pickWorldPos.x;
@@ -951,9 +953,11 @@
   const pick = () => {
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(pickables, false);
+    let pickedBody = null;
     if (hits.length === 1) {
+      pickedBody = hits[0].object.userData.body || null;
       emptyFrames = 0;
-      setHovered(hits[0].object.userData.body || null, 'raycast');
+      setHovered(pickedBody, 'raycast');
     } else if (hits.length > 1) {
       // When planets overlap on screen, pick the one whose 2D center is closest
       // to the mouse — respects user intent over arbitrary 3D depth order.
@@ -967,28 +971,47 @@
           bestHit = hits[i];
         }
       }
+      pickedBody = bestHit.object.userData.body || null;
       emptyFrames = 0;
-      setHovered(bestHit.object.userData.body || null, 'raycast');
+      setHovered(pickedBody, 'raycast');
     } else if (hoveredBody) {
       emptyFrames += 1;
       if (emptyFrames > 6) setHovered(null);
     }
+    raycastBodyAtPointer = pickedBody;
+    return pickedBody;
   };
-  canvas.addEventListener('pointermove', (event) => {
+  const isProtectedControl = (target) => target instanceof Element
+    && Boolean(target.closest('.ufo-controls, .hero-copy a, .hero-copy button, .hero-copy input, .hero-copy label'));
+  interactionStage.addEventListener('pointermove', (event) => {
+    pointerClient.x = event.clientX;
+    pointerClient.y = event.clientY;
+    if (isProtectedControl(event.target)) {
+      raycastBodyAtPointer = null;
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     cameraTarget.x = pointer.x;
     cameraTarget.y = pointer.y;
-    pick();
+    const pickedBody = pick();
+    if (pickedBody) {
+      lastBodyPointer = { x: pointerClient.x, y: pointerClient.y };
+      hoverExitGrace = null;
+      hoverExitDeadline = 0;
+      clearTimeout(hoverLeaveTimer);
+    }
   }, { passive: true });
-  canvas.addEventListener('pointerleave', () => {
+  interactionStage.addEventListener('pointerleave', () => {
     pointer.set(2, 2);
     cameraTarget.set(0, 0);
+    raycastBodyAtPointer = null;
     setHovered(null);
   });
-  canvas.addEventListener('click', () => {
-    const node = hoveredBody && bodyNodes.get(hoveredBody);
+  interactionStage.addEventListener('click', (event) => {
+    if (isProtectedControl(event.target)) return;
+    const node = raycastBodyAtPointer && bodyNodes.get(raycastBodyAtPointer);
     if (node?.matches('a')) location.hash = node.getAttribute('href');
   });
   canvas.addEventListener('webglcontextlost', (event) => {
@@ -1042,7 +1065,7 @@
     pointerClient.y = point.y;
     const activeNode = hoveredBody && bodyNodes.get(hoveredBody);
     if (!activeNode || ufoControls?.matches(':hover') || ufoControls?.contains(event.target)) return;
-    if (pointerWithinNode(activeNode)) {
+    if (raycastBodyAtPointer === hoveredBody || pointerWithinNode(activeNode)) {
       lastBodyPointer = point;
       hoverExitGrace = null;
       hoverExitDeadline = 0;

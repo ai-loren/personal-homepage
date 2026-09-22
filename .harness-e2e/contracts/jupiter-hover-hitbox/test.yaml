@@ -1,0 +1,37 @@
+version: 1
+runtime:
+  engine: playwright
+  agent: playwright
+  timeoutMs: 30000
+environment:
+  targetUrl: http://127.0.0.1:4177
+  viewport:
+    width: 1280
+    height: 900
+cases:
+  - id: jupiter-visible-edge
+    entryCaseId: hover-jupiter-visible-edge
+    name: 木星边缘触碰立即聚焦
+    steps:
+      - id: wait-three-scene
+        action: assertVisible
+        target: '.universe.three-ready[data-scene="three"]'
+      - id: pause-orbits
+        action: click
+        target: '.motion-toggle'
+      - id: clear-initial-hover
+        action: hover
+        target: '.wordmark'
+      - id: hover-jupiter-left-edge
+        action: hover
+        target: '.planet-journey'
+        options:
+          action:
+            force: true
+            position:
+              x: 6
+              y: 29
+      - id: jupiter-camera-focused
+        action: assertVisible
+        target: '.universe[data-active-body="jupiter"][data-camera-state="focused"]'
+        implements: [jupiter-edge-focuses]
