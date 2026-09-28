@@ -2,16 +2,42 @@
 
 一个深色星空风格的个人主页，使用 HTML、CSS 和原生 JavaScript。无依赖、无构建步骤、无后端，可以直接部署到静态托管平台。
 
-## 打开网页
+## 本地启动
 
-直接双击 `index.html` 即可。推荐使用本地预览，以便测试与上线一致的浏览器行为：
+这是纯静态前端项目，没有专门的启动脚本，不需要执行 `npm install`、`npm start` 或构建命令。推荐使用 Python 3 自带的 HTTP 服务进行本地预览；Python 只负责提供静态文件，项目的 JavaScript 在浏览器中运行，不依赖 Python 后端。
+
+### 环境要求
+
+- 现代浏览器（如 Chrome、Edge、Firefox 或 Safari）。
+- Python 3：在终端执行 `python3 --version` 确认可用；如果提示找不到命令，请先安装 Python 3。
+
+### 启动与访问
+
+在终端进入包含 `index.html` 的项目根目录，然后启动服务。当前本机路径示例（其他机器请替换为实际路径）：
 
 ```bash
-cd /Users/bytedance/Documents/personal-homepage
+cd /Users/loren/Documents/loren/personal-homepage
 python3 -m http.server 4177 --bind 127.0.0.1
 ```
 
-浏览器打开 <http://127.0.0.1:4177>。按 `Ctrl+C` 停止预览服务。
+看到 `Serving HTTP on 127.0.0.1 port 4177` 后，在同一台电脑的浏览器中打开 <http://127.0.0.1:4177/>。
+
+- **保持运行**：预览期间不要关闭运行服务的终端；该命令持续占用终端是正常现象。
+- **停止服务**：在运行服务的终端按 `Ctrl+C`；下次预览时重新执行启动命令。
+- **更新页面**：修改代码或 `content.js` 后手动刷新浏览器，没有自动热更新。如果样式或脚本没有更新，macOS 的 Chrome 可按 `⌘+Shift+R` 强制刷新。
+
+### 常见问题
+
+- **浏览器提示 `ERR_CONNECTION_REFUSED` / 连接被拒绝**：通常是服务未启动、已退出，或访问的端口与启动端口不一致。先检查终端是否成功启动并保持运行，再确认访问地址。
+- **终端提示 `Address already in use` / 端口被占用**：若该端口已有本项目的服务，可直接访问，无需重复启动；否则换用下面的命令，并访问 <http://127.0.0.1:4178/>：
+
+  ```bash
+  python3 -m http.server 4178 --bind 127.0.0.1
+  ```
+
+- **打开后显示目录列表而不是主页**：启动目录不正确，请先进入包含本项目 `index.html` 的目录，再启动服务。
+
+也可以直接双击 `index.html` 预览，但推荐使用上述 HTTP 服务，以便测试与上线一致的浏览器行为。
 
 ## 换成自己的内容
 
