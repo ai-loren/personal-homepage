@@ -7,4 +7,5 @@
 .harness-e2e/test-results/
 .harness-e2e/playwright-report/
 artifacts/
+dist/
 *.log

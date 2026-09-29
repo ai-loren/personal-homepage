@@ -37,7 +37,7 @@ cases:
         description: 首页个人简介区显示西安电子科技大学官方校徽，以及硕士计算机技术和本科软件工程的学历摘要。
       - id: professional-profile
         type: visible
-        description: 首页和关于页均准确显示当前职位 Bytedance Seed AI Infra Engineer，以及所在地区中国上海市。
+        description: 默认 bytedance 模式下，首页和关于页显示职业经历 Bytedance Seed AI Infra Engineer，不将历史岗位标为当前职位；所在地区仍为中国上海市。
       - id: home-location-bilingual
         type: visible
         description: 首页 BASE 信息块在中文“中国 上海市”下方显示英文“CHINA · SHANGHAI”，两行层级清晰且不挤压布局。

@@ -1,11 +1,10 @@
 window.SITE_CONTENT = {
+  // 完整源数据仅供本地维护与构建；公开范围由 site.config.mjs 控制，禁止直接托管源码目录。
   profile: {
     name: 'loren',
     siteTitle: "Loren's Galaxy",
-    eyebrow: '一块小小的互联网自留地',
     intro: '写代码，做产品，记录有意思的想法。',
     description: '相信好的东西来自好奇心，也来自把一个小想法认真做完。这里是我的作品、文字，和一些尚未成形的灵感。',
-    role: 'Bytedance Seed AI Infra Engineer',
     location: '中国 上海市',
     locationEn: 'CHINA · SHANGHAI',
     note: '保持好奇，持续创造。',
@@ -23,7 +22,7 @@ window.SITE_CONTENT = {
       '工作之外，我会写下观察，做一些小项目，也会为没有明确用途的好奇心留出时间。',
     ],
     facts: [
-      { label: '当前职位', profile: 'role' },
+      { label: '职业经历', profile: 'role' },
       { label: '所在地区', profile: 'location' },
       { label: '正在探索', value: 'AI 产品与 Agent 系统' },
       { label: '喜欢的工作方式', value: '从原型开始，持续迭代' },
@@ -56,7 +55,29 @@ window.SITE_CONTENT = {
   ],
   experience: [
     {
+      id: 'tencent',
+      company: '腾讯',
+      profileRole: 'Tencent Hunyuan AI Infra Engineer',
+      logo: './assets/tencent-logo.png',
+      logoAlt: 'Tencent',
+      start: '2026-09',
+      roles: [
+        {
+          title: 'Hunyuan AI Infra Engineer',
+          logo: './assets/tencent-hunyuan-logo.png',
+          logoAlt: 'Tencent Hunyuan',
+          logoKind: 'hunyuan',
+          start: '2026-09',
+          current: true,
+          highlights: [],
+          skills: [],
+        },
+      ],
+    },
+    {
+      id: 'bytedance',
       company: '字节跳动',
+      profileRole: 'Bytedance Seed AI Infra Engineer',
       logo: './assets/bytedance-logo.png',
       logoAlt: 'ByteDance',
       employmentType: '正式',
@@ -70,7 +91,8 @@ window.SITE_CONTENT = {
           logoAlt: 'ByteDance Seed',
           logoKind: 'seed',
           start: '2026-01',
-          current: true,
+          end: '2026-09',
+          current: false,
           highlights: [
             'ML Infra Platform',
             'Agentic ML Infra & Agent',
