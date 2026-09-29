@@ -1,3 +1,4 @@
+# 历史 ByteDance 展示基线；当前锁定发布由 .harness-e2e/career-locked.js 验收。
 version: 1
 runtime:
   engine: playwright
@@ -338,7 +339,7 @@ cases:
       - id: seed-period-visible
         action: assertText
         target: '#work-experience-list [data-role="Seed AI Infra Engineer"]'
-        value: 2026.01 — 至今
+        value: 2026.01 — 2026.09
         implements: [work-experience-profile]
       - id: seed-focus-visible
         action: assertText

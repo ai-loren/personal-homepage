@@ -8,10 +8,10 @@
     <title>Loren's Galaxy</title>
     <link rel="icon" type="image/png" sizes="128x128" href="./assets/lorens-saturn-favicon.png?v=20260921-1">
     <link rel="preload" href="./vendor/fonts/noto-serif-sc-subset.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="./styles.css?v=20260922-22">
+    <link rel="stylesheet" href="./styles.css?v=20260928-locked1">
     <script src="./vendor/three.min.js" defer></script>
-    <script src="./content.js?v=20260922-10" defer></script>
-    <script src="./app.js?v=20260922-4" defer></script>
+    <script src="./content.js?v=20260928-locked1" defer></script>
+    <script src="./app.js?v=20260928-locked1" defer></script>
     <script src="./globe-renderer.js" defer></script>
     <script src="./cosmos.js?v=20260922-17" defer></script>
     <script src="./solar-system-3d.js?v=20260922-16" defer></script>
@@ -51,6 +51,13 @@
             <svg class="sun-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"></path></svg>
             <svg class="moon-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.5 13.3A8.5 8.5 0 0 1 10.7 3.5a8.5 8.5 0 1 0 9.8 9.8Z"></path></svg>
           </button>
+          <div class="career-switch" id="career-switch" hidden>
+            <button class="career-toggle" id="career-toggle" type="button" aria-label="职业经历展示" aria-haspopup="menu" aria-expanded="false" aria-controls="career-menu">
+              <span id="career-current">职业展示</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <div class="career-menu" id="career-menu" role="menu" aria-label="职业经历展示模式" hidden></div>
+          </div>
           <button class="icon-button menu-toggle" type="button" aria-label="打开导航" aria-expanded="false" aria-controls="mobile-nav">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 8h16M4 16h16"></path></svg>
           </button>
@@ -72,7 +79,7 @@
           <div class="hero">
             <canvas class="solar-system-3d" aria-hidden="true"></canvas>
             <div class="hero-copy">
-              <p class="eyebrow"><span class="status-dot"></span><span data-profile="eyebrow">一块小小的互联网自留地</span></p>
+              <p class="eyebrow" aria-hidden="true"></p>
               <p class="terminal-command" aria-hidden="true"><span>~</span> / whoami <span class="terminal-cursor"></span></p>
               <div class="hero-identity">
                 <figure class="hero-portrait">
@@ -81,10 +88,10 @@
                 <h1 id="home-title">你好，我是<br><span class="hero-name" data-profile="name">loren</span><span class="hero-period">.</span></h1>
               </div>
               <p class="hero-intro" data-profile="intro">写代码，做产品，记录有意思的想法。</p>
-              <dl class="hero-profile-meta" aria-label="当前职位与所在地区">
+              <dl class="hero-profile-meta" aria-label="职业经历与所在地区">
                 <div>
-                  <dt>ROLE / 当前职位</dt>
-                  <dd data-profile="role">Bytedance Seed AI Infra Engineer</dd>
+                  <dt>ROLE / 职业经历</dt>
+                  <dd data-profile="role">AI Infra Engineer</dd>
                 </div>
                 <div>
                   <dt>BASE / 所在地区</dt>

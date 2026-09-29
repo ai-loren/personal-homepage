@@ -1,3 +1,4 @@
+# 历史 ByteDance 展示基线；当前锁定发布由 .harness-e2e/career-locked.js 验收。
 version: 1
 runtime:
   engine: playwright

@@ -2,16 +2,32 @@
   'use strict';
 
   const {
-    profile,
+    careerMode,
+    careerModes: careerModeNames = {},
+    profile: baseProfile,
     about,
     experiments,
-    experience = [],
+    experience: allExperience = [],
     journey,
     library,
     articles,
     projects,
     ideas,
-  } = window.SITE_CONTENT;
+  } = structuredClone(window.SITE_CONTENT);
+  const allowedCareerModes = Object.freeze(Object.keys(careerModeNames));
+  const careerLocked = allowedCareerModes.length <= 1;
+  const validCareerMode = allowedCareerModes.includes(careerMode);
+  if (!validCareerMode) {
+    console.error(`Public careerMode expects one of ${JSON.stringify(allowedCareerModes)}; got ${JSON.stringify(careerMode)}. Rebuild the public site using scripts/site.mjs before serving it.`);
+  }
+  let activeCareerMode = validCareerMode ? careerMode : null;
+  let experience = validCareerMode
+    ? allExperience.filter((company) => careerMode === 'all' || company.id === careerMode)
+    : [];
+  const profile = {
+    ...baseProfile,
+    role: experience.map((company) => company.profileRole).join('\n') || '未展示职业经历',
+  };
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (character) => ({
@@ -112,6 +128,7 @@
     syncResponsiveState();
   }
   $('.menu-toggle').addEventListener('click', () => {
+    closeCareerMenu();
     const willOpen = $('#mobile-nav').hidden;
     $('#mobile-nav').hidden = !willOpen;
     document.body.classList.toggle('mobile-menu-open', willOpen);
@@ -140,6 +157,107 @@
   mobileViewport.addEventListener('change', syncResponsiveState);
   window.addEventListener('resize', syncResponsiveState);
   window.addEventListener('load', syncResponsiveState);
+
+  const careerSwitch = $('#career-switch');
+  const careerToggle = $('#career-toggle');
+  const careerMenu = $('#career-menu');
+  careerMenu.innerHTML = allowedCareerModes.map((mode) =>
+    `<button class="career-option" type="button" role="menuitemradio" aria-checked="false" tabindex="-1" data-career-mode="${escapeHTML(mode)}">${escapeHTML(careerModeNames[mode])}</button>`
+  ).join('');
+  const careerOptions = [...careerMenu.querySelectorAll('[data-career-mode]')];
+
+  function syncCareerControl() {
+    const label = careerModeNames[activeCareerMode] || '职业展示';
+    $('#career-current').textContent = label;
+    careerToggle.disabled = careerLocked;
+    careerToggle.setAttribute('aria-label', `职业经历展示：${label}${careerLocked ? '（固定）' : ''}`);
+    careerToggle.setAttribute('aria-haspopup', careerLocked ? 'false' : 'menu');
+    careerToggle.title = careerLocked ? `职业经历展示固定为 ${label}` : `切换职业经历展示：${label}`;
+    careerOptions.forEach((option) => {
+      option.setAttribute('aria-checked', String(option.dataset.careerMode === activeCareerMode));
+    });
+    document.documentElement.dataset.careerMode = activeCareerMode || '';
+  }
+
+  function setCareerMode(mode) {
+    if (careerLocked || !allowedCareerModes.includes(mode) || mode === activeCareerMode) return;
+    activeCareerMode = mode;
+    experience = allExperience.filter((company) => mode === 'all' || company.id === mode);
+    profile.role = experience.map((company) => company.profileRole).join('\n') || '未展示职业经历';
+    $$('[data-profile="role"], [data-profile-field="role"]').forEach((node) => {
+      node.textContent = profile.role;
+    });
+    renderExperience();
+    syncCareerControl();
+    syncResponsiveState();
+  }
+
+  function closeCareerMenu(restoreFocus = false) {
+    const wasOpen = !careerMenu.hidden;
+    careerMenu.hidden = true;
+    careerToggle.setAttribute('aria-expanded', 'false');
+    if (restoreFocus && wasOpen) careerToggle.focus({ preventScroll: true });
+  }
+
+  function focusCareerOption(index) {
+    careerOptions.forEach((option, position) => { option.tabIndex = position === index ? 0 : -1; });
+    careerOptions[index].focus({ preventScroll: true });
+  }
+
+  function openCareerMenu(index = Math.max(0, careerOptions.findIndex((option) => option.dataset.careerMode === activeCareerMode))) {
+    if (careerLocked) return;
+    closeMenu();
+    careerMenu.hidden = false;
+    careerToggle.setAttribute('aria-expanded', 'true');
+    focusCareerOption(index);
+  }
+
+  careerToggle.addEventListener('click', () => {
+    if (careerMenu.hidden) openCareerMenu();
+    else closeCareerMenu();
+  });
+  careerToggle.addEventListener('keydown', (event) => {
+    if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    event.preventDefault();
+    openCareerMenu(event.key === 'ArrowUp' ? careerOptions.length - 1 : 0);
+  });
+  careerMenu.addEventListener('click', (event) => {
+    const option = event.target.closest('[data-career-mode]');
+    if (!careerOptions.includes(option)) return;
+    setCareerMode(option.dataset.careerMode);
+    closeCareerMenu(true);
+  });
+  careerMenu.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      closeCareerMenu(true);
+      return;
+    }
+    if (event.key === 'Tab') {
+      closeCareerMenu(true);
+      return;
+    }
+    const index = careerOptions.indexOf(document.activeElement);
+    const next = {
+      ArrowDown: (index + 1) % careerOptions.length,
+      ArrowUp: (index - 1 + careerOptions.length) % careerOptions.length,
+      Home: 0,
+      End: careerOptions.length - 1,
+    }[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    focusCareerOption(next);
+  });
+  careerSwitch.addEventListener('focusout', (event) => {
+    if (!careerSwitch.contains(event.relatedTarget)) closeCareerMenu();
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!careerSwitch.contains(event.target)) closeCareerMenu();
+  });
+  window.addEventListener('hashchange', () => closeCareerMenu());
+  syncCareerControl();
+  careerSwitch.hidden = false;
 
   function renderFilters(selector, categories, selected, onSelect) {
     const container = $(selector);
@@ -224,16 +342,21 @@
     return value.replace('-', '.');
   }
 
-  function formatDuration(start, end) {
+  function formatPeriod(start, end, current) {
+    if (!start) return current ? '在职' : '已离职';
+    return `${formatYearMonth(start)} — ${current ? '至今' : end ? formatYearMonth(end) : '已离职'}`;
+  }
+
+  function formatDuration(start, end, current = false) {
+    // 未知起止时间不估算时长；缺少结束时间的历史岗位不能自动延长到今天。
+    if (!start || (!current && !end)) return '';
     const startDate = parseYearMonth(start);
     const now = new Date();
-    const endDate = end
-      ? parseYearMonth(end)
-      : { year: now.getFullYear(), month: now.getMonth() + 1 };
-    const totalMonths = Math.max(
-      1,
-      (endDate.year - startDate.year) * 12 + endDate.month - startDate.month + 1,
-    );
+    const endDate = current
+      ? { year: now.getFullYear(), month: now.getMonth() + 1 }
+      : parseYearMonth(end);
+    const totalMonths = (endDate.year - startDate.year) * 12 + endDate.month - startDate.month + 1;
+    if (!Number.isFinite(totalMonths) || totalMonths < 1) return '';
     const years = Math.floor(totalMonths / 12);
     const months = totalMonths % 12;
     return [
@@ -242,36 +365,42 @@
     ].filter(Boolean).join(' ');
   }
 
+  function renderExperienceMark(entry) {
+    return entry.logo
+      ? `<img src="${escapeHTML(entry.logo)}" alt="${escapeHTML(entry.logoAlt || entry.company || entry.title)}">`
+      : `<span class="experience-brand-text">${escapeHTML(entry.logoText || entry.company || entry.title)}</span>`;
+  }
+
   function renderExperience() {
     $('#work-experience-list').innerHTML = experience.map((company) => {
-      const latestEnd = company.roles.some((role) => role.current)
-        ? null
-        : company.roles.map((role) => role.end).filter(Boolean).sort().at(-1);
-      const companyPeriod = `${formatYearMonth(company.start)} — ${latestEnd ? formatYearMonth(latestEnd) : '至今'}`;
+      const current = company.roles.some((role) => role.current);
+      const latestEnd = !current && company.roles.every((role) => role.end)
+        ? company.roles.map((role) => role.end).sort().at(-1)
+        : '';
+      const companyPeriod = formatPeriod(company.start, latestEnd, current);
+      const metadata = [company.employmentType, companyPeriod, formatDuration(company.start, latestEnd, current)].filter(Boolean);
+      const location = [company.location, company.workMode].filter(Boolean);
       return `
-        <article class="experience-company" data-company="${escapeHTML(company.company)}">
+        <article class="experience-company" data-company="${escapeHTML(company.company)}" data-company-id="${escapeHTML(company.id)}">
           <header class="experience-company-header">
             <div class="experience-company-identity">
-              <span class="experience-company-logo">
-                <img src="${escapeHTML(company.logo)}" alt="${escapeHTML(company.logoAlt)}" width="560" height="97">
-              </span>
+              <span class="experience-company-logo">${renderExperienceMark(company)}</span>
               <div>
                 <span class="experience-company-label">COMPANY / 工作单位</span>
                 <h2>${escapeHTML(company.company)}</h2>
-                <p>${escapeHTML(company.employmentType)} · ${escapeHTML(companyPeriod)} · ${escapeHTML(formatDuration(company.start, latestEnd))}</p>
+                <p>${escapeHTML(metadata.join(' · '))}</p>
               </div>
             </div>
-            <p class="experience-location">${escapeHTML(company.location)}<span aria-hidden="true">·</span>${escapeHTML(company.workMode)}</p>
+            ${location.length ? `<p class="experience-location">${location.map(escapeHTML).join('<span aria-hidden="true">·</span>')}</p>` : ''}
           </header>
           <div class="experience-roles">${company.roles.map((role) => {
-            const period = `${formatYearMonth(role.start)} — ${role.current ? '至今' : formatYearMonth(role.end)}`;
+            const period = formatPeriod(role.start, role.end, role.current);
+            const duration = formatDuration(role.start, role.end, role.current);
             return `
               <section class="journey-item journey-item-work experience-role" data-role="${escapeHTML(role.title)}">
                 <div class="journey-aside">
-                  <div class="journey-period">${escapeHTML(period)}<small>${escapeHTML(formatDuration(role.start, role.current ? null : role.end))}</small></div>
-                  <span class="experience-role-logo experience-role-logo-${escapeHTML(role.logoKind)}">
-                    <img src="${escapeHTML(role.logo)}" alt="${escapeHTML(role.logoAlt)}">
-                  </span>
+                  <div class="journey-period">${escapeHTML(period)}${duration ? `<small>${escapeHTML(duration)}</small>` : ''}</div>
+                  <span class="experience-role-logo experience-role-logo-${escapeHTML(role.logoKind)}">${renderExperienceMark(role)}</span>
                 </div>
                 <div>
                   <div class="journey-kicker">
@@ -279,8 +408,8 @@
                     ${role.current ? '<span class="journey-degree">当前</span>' : ''}
                   </div>
                   <h3>${escapeHTML(role.title)}</h3>
-                  <ul class="experience-highlights">${role.highlights.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>
-                  <div class="experience-skills" aria-label="相关技能">${role.skills.map((skill) => `<span>${escapeHTML(skill)}</span>`).join('')}</div>
+                  ${role.highlights?.length ? `<ul class="experience-highlights">${role.highlights.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>` : ''}
+                  ${role.skills?.length ? `<div class="experience-skills" aria-label="相关技能">${role.skills.map((skill) => `<span>${escapeHTML(skill)}</span>`).join('')}</div>` : ''}
                 </div>
               </section>`;
           }).join('')}</div>

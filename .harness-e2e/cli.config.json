@@ -1,0 +1,11 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "channel": "chromium",
+      "headless": true
+    }
+  },
+  "outputDir": ".harness-e2e/runs",
+  "outputMode": "stdout"
+}

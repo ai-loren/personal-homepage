@@ -1,47 +1,31 @@
 # Personal Space
 
-一个深色星空风格的个人主页，使用 HTML、CSS 和原生 JavaScript。无依赖、无构建步骤、无后端，可以直接部署到静态托管平台。
+一个深色星空风格的个人主页，使用 HTML、CSS 和原生 JavaScript。通过无第三方依赖的 Node.js 构建步骤裁剪公开履历，产物仍是纯静态文件，上线不需要运行时后端。
 
 ## 本地启动
 
-这是纯静态前端项目，没有专门的启动脚本，不需要执行 `npm install`、`npm start` 或构建命令。推荐使用 Python 3 自带的 HTTP 服务进行本地预览；Python 只负责提供静态文件，项目的 JavaScript 在浏览器中运行，不依赖 Python 后端。
+需要 Node.js 20+ 和现代浏览器，不需要 `npm install`。预览入口会先裁剪公开数据，再仅服务允许发布的文件；**不要再从源码根目录运行 `python3 -m http.server`**，否则完整履历、测试文件和 Git 元数据可能被直接读取。
 
-### 环境要求
-
-- 现代浏览器（如 Chrome、Edge、Firefox 或 Safari）。
-- Python 3：在终端执行 `python3 --version` 确认可用；如果提示找不到命令，请先安装 Python 3。
-
-### 启动与访问
-
-在终端进入包含 `index.html` 的项目根目录，然后启动服务。当前本机路径示例（其他机器请替换为实际路径）：
+在项目根目录执行（其他机器请替换实际路径）：
 
 ```bash
 cd /Users/loren/Documents/loren/personal-homepage
-python3 -m http.server 4177 --bind 127.0.0.1
+node scripts/site.mjs serve
 ```
 
-看到 `Serving HTTP on 127.0.0.1 port 4177` 后，在同一台电脑的浏览器中打开 <http://127.0.0.1:4177/>。
+看到 `Preview: http://127.0.0.1:4177/` 后打开该地址。当前页面固定显示 Tencent，控件不可展开，浏览器收到的数据也只有 Tencent。
 
-- **保持运行**：预览期间不要关闭运行服务的终端；该命令持续占用终端是正常现象。
-- **停止服务**：在运行服务的终端按 `Ctrl+C`；下次预览时重新执行启动命令。
-- **更新页面**：修改代码或 `content.js` 后手动刷新浏览器，没有自动热更新。如果样式或脚本没有更新，macOS 的 Chrome 可按 `⌘+Shift+R` 强制刷新。
+- **停止服务**：在运行服务的终端按 `Ctrl+C`。
+- **更新页面**：修改源码或 `site.config.mjs` 后，停止并重新执行启动命令，再刷新浏览器。服务只使用启动时生成的公开快照，没有自动热更新。
+- **连接被拒绝**：确认启动成功、终端保持运行，浏览器端口与启动端口一致。
+- **端口占用**：先停止旧服务；也可执行 `node scripts/site.mjs serve --port 4178` 并访问 <http://127.0.0.1:4178/>。不要让旧的源码目录服务继续运行。
+- **只生成发布文件**：执行 `node scripts/site.mjs build`，结果在 `dist/`。重新构建会清理此前生成的目录，避免留下旧模式数据或 Logo；不识别的目录会拒绝覆盖。
 
-### 常见问题
-
-- **浏览器提示 `ERR_CONNECTION_REFUSED` / 连接被拒绝**：通常是服务未启动、已退出，或访问的端口与启动端口不一致。先检查终端是否成功启动并保持运行，再确认访问地址。
-- **终端提示 `Address already in use` / 端口被占用**：若该端口已有本项目的服务，可直接访问，无需重复启动；否则换用下面的命令，并访问 <http://127.0.0.1:4178/>：
-
-  ```bash
-  python3 -m http.server 4178 --bind 127.0.0.1
-  ```
-
-- **打开后显示目录列表而不是主页**：启动目录不正确，请先进入包含本项目 `index.html` 的目录，再启动服务。
-
-也可以直接双击 `index.html` 预览，但推荐使用上述 HTTP 服务，以便测试与上线一致的浏览器行为。
+如果使用其他静态服务器，只能把 `dist/` 设为网站根目录。不要直接打开源码 `index.html`，也不要发布整个仓库。
 
 ## 换成自己的内容
 
-编辑 `content.js`，刷新网页即可看到改动：
+编辑源码 `content.js` 后重新启动预览，或重新构建并部署 `dist/`。不要直接编辑 `dist/content.js`，它会在下次构建时被覆盖：
 
 | 配置 | 用途 |
 | --- | --- |
@@ -63,6 +47,44 @@ python3 -m http.server 4177 --bind 127.0.0.1
 项目的 `url` 是演示地址，`source` 是源码地址，均使用完整的 `https://...` URL；留空就不会出现相应按钮。`artwork` 支持 `browser`、`timer`、`notes`、`terminal` 四种 CSS 示意图。计时器等概念卡片仅用于介绍项目，不代表已经实现对应应用。
 
 姓名已配置为 loren；文章、随想及概念项目仍为演示内容。上线前请替换；同时更新 `index.html` 中的初始 `<title>`、description 和首页介绍，让禁用 JavaScript 时的展示也与你的资料一致。
+
+## 职业经历展示开关
+
+唯一开关是 `site.config.mjs` 中的 `CAREER_VISIBILITY`，当前固定为 `'tencent'`。它只在构建/启动预览时读取，不会发给浏览器，也不接受 URL、存储或 HTTP 参数覆盖。
+
+| 开关值 | 生成的公开内容与控件 |
+| --- | --- |
+| `tencent`（当前） | 仅包含 Tencent 履历及图片，右上角固定 Tencent，不可展开 |
+| `bytedance` | 仅包含 ByteDance 履历及图片，控件固定 ByteDance |
+| `all` | 包含两家公司，恢复“全部履历 / ByteDance / Tencent”三模式菜单 |
+
+**暂不开放 `all` 和 `bytedance`。**相关源数据、图片、筛选逻辑和交互测试完整保留，后续确认开放时只需修改开关，再重新构建并部署。`all` 模式下的菜单选择仅在本次页面生命周期内有效，不写入存储，刷新回到构建默认值。
+
+完整数据仍在源码 `content.js` 的 `experience` 中维护。首页与关于的职位由公司 `profileRole` 派生；教育和其他栏目不受影响。构建会生成裁剪后的 `dist/content.js`，未开放公司的数据和 Logo 不进入 `dist/`；其他公开文件若残留该公司的职位、介绍等引用，构建会报错而不是继续发布。非法开关同样直接报错，不回退为全部公开。
+
+展示范围不改变实际任职状态：Tencent 及 Hunyuan 岗位时间为 2026.09 — 至今，ByteDance 及 Seed 岗位均于 2026.09 结束。尚未提供的 Tencent 职责和技能留空，不推算或编造；缺少日期时不显示时长。补充日期使用 `YYYY-MM` 格式，当前岗位由 `current: true` 标识。公司结束月份仅在所有历史岗位结束月份已知时计算，避免把 Ads 结束日期误当成 ByteDance 离职日期。Tencent/Hunyuan 使用 `assets/tencent-logo.png` 和 `assets/tencent-hunyuan-logo.png`，通过 `logo` 和 `logoAlt` 配置；两张透明 PNG 分别来自[腾讯官方媒体库](https://www.tencent.com/en-us/media/library.html)和[混元官方仓库](https://github.com/Tencent/Tencent-Hunyuan-Large)，与选定的参考图版本一致，页面不依赖外链图片。
+
+**安全边界是“不发送未公开数据”，不是让浏览器代码无法修改。**访客可以修改自己的页面文字或 JavaScript，但不能从 Tencent 公开文件中还原未发布的履历。预览仅服务文件白名单；README、测试、构建配置、Git 元数据、未公开 Logo 和源码备份均不可通过预览 URL 访问。服务返回 `Cache-Control: no-store`，修改查询参数也只会得到同一份裁剪数据。
+
+**源码仓库必须保持私有，线上也必须只部署 `dist/`。**如果旧网站或公开 Git 历史已包含完整履历，单靠此开关无法撤回别人已下载或缓存的数据；需要另行下线旧发布目录、清理托管/CDN 缓存并检查仓库可见性。本次代码不会自动更改远端仓库或托管平台设置。
+
+### 职业展示回归验证（可选）
+
+先运行 `node --test scripts/site.test.mjs`，检查数据裁剪、完整源数据保留、旧产物清理、路径遍历和私有文件拒绝访问。Node 测试不需要安装额外依赖。
+
+浏览器回归使用固定版本 Playwright CLI。保持安全预览服务运行，再在项目根目录执行：
+
+```bash
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli install-browser chromium
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests open http://127.0.0.1:4177/ --config=.harness-e2e/cli.config.json
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/career-locked.js)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(node .harness-e2e/unlocked-fixture.mjs)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
+```
+
+`career-locked.js` 检查真实公开响应，尝试修改 DOM、全局配置、URL、存储及客户端策略，验证不能恢复未下发的履历；同时检查 Tencent 图片、时间、响应式和阅读功能。
+
+`unlocked-fixture.mjs` 仅将完整数据与图片注入隔离测试浏览器，不写入 `dist/`，不开放额外 HTTP 路径，不修改真实开关。它复用 `career-modes.js` 验证保留的三模式、鼠标/键盘、路由与搜索状态、日期边界、320–1440px 菜单布局和深浅主题。原有 ByteDance 桌面/移动端 YAML 契约作为历史模式基线保留，不用于验收当前 Tencent 锁定发布。
 
 ## 功能
 
@@ -88,12 +110,12 @@ python3 -m http.server 4177 --bind 127.0.0.1
 
 ## 部署
 
-部署时上传 `index.html`、`styles.css`、`content.js`、`app.js`、`cosmos.js`、`globe-renderer.js`、`solar-system-3d.js`、`page-scenes.js` 和 `vendor/` 目录，保持相对路径不变。`vendor/three.min.js` 固定为 Three.js r160，并附带对应许可证。
+先运行 `node scripts/site.mjs build`，构建成功后**仅发布 `dist/` 的内容**，不要把它追加到仍包含旧源码文件的目录。`dist/` 已包含页面、裁剪后的数据、获准使用的图片、Three.js r160、字体及许可证。原始 `assets/` 是长期源资源，不可删除；仅未获准公开的公司图片不会被复制到产物。
 
-- **Cloudflare Pages / Netlify**：上传这个静态目录，或关联自己的 Git 仓库。
-- **GitHub Pages**：将上述文件和 `vendor/` 目录放到仓库根目录，开启 Pages 的分支部署。
-- **Vercel**：导入自己的 Git 仓库，选择普通静态项目，不设构建命令，输出目录使用项目根目录。
+- **Cloudflare Pages / Netlify / Vercel**：使用 Node.js 20+，构建命令设为 `node scripts/site.mjs build`，输出目录设为 `dist`。关联源仓库时保持源仓库私有。
+- **GitHub Pages**：使用工作流只上传 `dist/` 产物，或将其内容发布到单独的发布目标；不要再从包含源码的 `main` 根目录部署。
+- **手工上传**：用新 `dist/` 完整替换公开目录，确认 README、Git 元数据、脚本、测试、备份及旧公司 Logo 均不存在。构建失败时停止发布，不使用遗留产物继续上线。
 
-本站使用 hash 路由，不需要服务端重写规则；也能放在子目录中。预览截图和 `.harness-e2e/` 不需要上传。
+本站仍使用 hash 路由，不需要服务端重写规则，也可放在子目录中。上述托管设置需在平台上实际应用；修改本地代码不会自动调整已有线上部署。
 
 当前实现适合个人展示与本地文件维护。如果之后需要留言、订阅、跨设备在线编辑，需另接相应服务。每篇文章的独立搜索引擎收录与分享预览，可以在后续通过静态站点生成器实现。
