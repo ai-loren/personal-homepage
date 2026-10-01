@@ -67,9 +67,6 @@ test('Tencent public files contain no private career or source files', async () 
 
 test('private employer references outside experience stop publication', async (t) => {
   const root = await temporaryDirectory(t);
-  const poisoned = structuredClone(source);
-  poisoned.profile.description = 'Seed AI Infra Engineer';
-  await writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(poisoned)};`);
   const files = await createPublicFiles({ visibility: 'all' });
   for (const [name, bytes] of files) {
     if (name === 'content.js') continue;
@@ -77,7 +74,25 @@ test('private employer references outside experience stop publication', async (t
     await mkdir(join(target, '..'), { recursive: true });
     await writeFile(target, bytes);
   }
-  await assert.rejects(createPublicFiles({ root }), /excluded company's information/);
+  for (const marker of ['Seed AI Infra Engineer', 'seed ai infra engineer', 'bytedance', 'BYTEDANCE', 'ipgen.ohayoo.cn', 'IPGEN.OHAYOO.CN', 'Ocean Engine', '巨量引擎']) {
+    await t.test(marker, async () => {
+      const poisoned = structuredClone(source);
+      poisoned.profile.description = marker;
+      await writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(poisoned)};`);
+      await assert.rejects(createPublicFiles({ root }), /excluded company's information/);
+    });
+  }
+});
+
+test('all and ByteDance publications still build with their allowed assets', async () => {
+  for (const mode of ['all', 'bytedance']) {
+    const files = await createPublicFiles({ visibility: mode });
+    const content = decodeContent(files);
+    assert.equal(content.careerMode, mode);
+    assert(files.has('assets/bytedance-logo.png'));
+    assert.equal(files.has('assets/tencent-logo.png'), mode === 'all');
+    assert.equal(content.experience.length, mode === 'all' ? 2 : 1);
+  }
 });
 
 test('rebuilding a former all directory removes old private logos and files', async (t) => {
@@ -89,6 +104,19 @@ test('rebuilding a former all directory removes old private logos and files', as
   await writePublicFiles(await createPublicFiles(), output);
   await assert.rejects(stat(join(output, 'assets/bytedance-logo.png')), { code: 'ENOENT' });
   await assert.rejects(stat(join(output, 'content.backup.js')), { code: 'ENOENT' });
+  assert(!privateText.test(await readFile(join(output, 'content.js'), 'utf8')));
+});
+
+test('a failed output write can be rebuilt without manual directory removal', async (t) => {
+  const parent = await temporaryDirectory(t);
+  const output = join(parent, 'dist');
+  const broken = new Map([
+    ['assets', Buffer.from('conflicting file')],
+    ['assets/logo.png', Buffer.from('unreachable asset')],
+  ]);
+  await assert.rejects(writePublicFiles(broken, output), (error) => ['EEXIST', 'ENOTDIR'].includes(error.code));
+  await writePublicFiles(await createPublicFiles(), output);
+  assert((await stat(join(output, 'assets/tencent-logo.png'))).isFile());
   assert(!privateText.test(await readFile(join(output, 'content.js'), 'utf8')));
 });
 
