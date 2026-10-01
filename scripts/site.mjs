@@ -7,6 +7,10 @@ import { CAREER_VISIBILITY } from '../site.config.mjs';
 
 export const PROJECT_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const MODE_NAMES = Object.freeze({ all: '全部履历', bytedance: 'ByteDance', tencent: 'Tencent' });
+const PRIVATE_MARKERS = {
+  bytedance: ['ByteDance', '字节跳动', '巨量引擎', 'Ocean Engine', 'ipgen.ohayoo.cn'],
+  tencent: ['Tencent', '腾讯', 'Tencent Hunyuan'],
+};
 const OUTPUT_MARKER = 'personal-homepage public output v1\n';
 const PUBLIC_FILES = [
   'index.html', 'styles.css', 'app.js', 'cosmos.js', 'globe-renderer.js',
@@ -64,12 +68,13 @@ export function selectPublicContent(source, visibility = CAREER_VISIBILITY) {
 function assertNoPrivateCareer(files, source, publicContent) {
   const published = new Set(publicContent.experience.map((company) => company.id));
   const markers = source.experience.filter((company) => !published.has(company.id)).flatMap((company) => [
+    ...(PRIVATE_MARKERS[company.id] || []),
     company.company, company.profileRole, company.logo, company.logoAlt,
-    ...company.roles.flatMap((role) => [role.title, role.logo, ...(role.highlights || [])]),
-  ]).filter(Boolean);
+    ...company.roles.flatMap((role) => [role.title, role.logo, role.logoAlt, ...(role.highlights || [])]),
+  ]).filter(Boolean).map((marker) => marker.toLowerCase());
   for (const [name, buffer] of files) {
     if (!['.html', '.js', '.css', '.txt'].includes(extname(name))) continue;
-    const text = buffer.toString('utf8');
+    const text = buffer.toString('utf8').toLowerCase();
     if (markers.some((marker) => text.includes(marker))) {
       throw new Error(`${name} contains an excluded company's information. Remove its public reference before building; private content.js data can remain.`);
     }
@@ -109,12 +114,13 @@ export async function writePublicFiles(files, output = join(PROJECT_ROOT, 'dist'
     await rm(output, { recursive: true });
   }
   await mkdir(output, { recursive: true });
+  // 归属标记先于资产写入，进程中断后半成品仍可识别并安全重建。
+  await writeFile(join(output, '.site-public'), OUTPUT_MARKER);
   for (const [name, buffer] of files) {
     const target = join(output, name);
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, buffer);
   }
-  await writeFile(join(output, '.site-public'), OUTPUT_MARKER);
 }
 
 export function createPreviewServer(files) {
