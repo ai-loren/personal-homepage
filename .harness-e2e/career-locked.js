@@ -33,9 +33,16 @@ async (page) => {
       const response = await page.request.get(`${baseURL}${file}`);
       assert(response.ok() && !privateText.test(await response.text()), `Private history is present in ${file}`);
     }
-    for (const path of ['content.js.bak', 'site.config.mjs', 'README.md', '.git/config', '.git/HEAD', '.harness-e2e/career-modes.js', 'scripts/site.mjs', 'assets/bytedance-logo.png', 'assets/bytedance-seed-logo.png', 'assets/ocean-engine-logo.png', '%2e%2e%2fcontent.js', 'assets/']) {
-      assert((await page.request.get(`${baseURL}${path}`)).status() === 404, `Private path accessible: ${path}`);
+    for (const path of ['content.js.bak', 'site.config.mjs', 'README.md', '.git/config', '.git/HEAD', '.harness-e2e/career-modes.js', 'scripts/site.mjs', 'assets/bytedance-logo.png', 'assets/bytedance-seed-logo.png', 'assets/ocean-engine-logo.png', 'assets/']) {
+      const response = await page.request.get(`${baseURL}${path}`);
+      assert(response.status() === 404, `Private path expected HTTP 404: ${path}; got ${response.status()}`);
     }
+    const malformedResponse = await page.request.get(`${baseURL}%2e%2e%2fcontent.js`);
+    const malformedBody = await malformedResponse.text();
+    if (localPreview) assert(malformedResponse.status() === 404, 'Preview did not reject the malformed path');
+    else assert(malformedResponse.status() >= 400, `CDN returned success for malformed path: ${malformedResponse.status()}`);
+    assert(!privateText.test(malformedBody) && !malformedBody.includes('SITE_CONTENT'), 'Malformed path returned site data');
+    results.push(`Malformed-path response: HTTP ${malformedResponse.status()}, no site data`);
     await checkTencent('initial');
     assert(await page.locator('#career-toggle').isDisabled(), 'Career toggle should be disabled');
     assert(await page.locator('#career-current').textContent() === 'Tencent', 'Career label should be fixed to Tencent');
