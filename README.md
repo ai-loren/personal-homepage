@@ -66,7 +66,7 @@ node scripts/site.mjs serve
 
 **安全边界是“不发送未公开数据”，不是让浏览器代码无法修改。**访客可以修改自己的页面文字或 JavaScript，但不能从 Tencent 公开文件中还原未发布的履历。预览仅服务文件白名单；README、测试、构建配置、Git 元数据、未公开 Logo 和源码备份均不可通过预览 URL 访问。服务返回 `Cache-Control: no-store`，修改查询参数也只会得到同一份裁剪数据。
 
-**源码仓库必须保持私有，线上也必须只部署 `dist/`。**如果旧网站或公开 Git 历史已包含完整履历，单靠此开关无法撤回别人已下载或缓存的数据；需要另行下线旧发布目录、清理托管/CDN 缓存并检查仓库可见性。本次代码不会自动更改远端仓库或托管平台设置。
+**网站只部署 `dist/`，但源码仓库目前按维护者决定保持公开。**完整履历仍可通过 GitHub 源码与历史查看；网站的数据裁剪只控制 Pages 站点展示和下载内容，不代表源码保密。如果以后需要真正限制完整履历的获取，需另行将源仓库私有化并处理旧发布、历史和缓存。
 
 ### 职业展示回归验证（可选）
 
@@ -82,7 +82,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-co
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 ```
 
-`career-locked.js` 检查真实公开响应，尝试修改 DOM、全局配置、URL、存储及客户端策略，验证不能恢复未下发的履历；同时检查 Tencent 图片、时间、响应式和阅读功能。
+`career-locked.js` 检查真实公开响应，尝试修改 DOM、全局配置、URL、存储及客户端策略，验证不能恢复未下发的履历；同时检查 Tencent 图片、时间、响应式和阅读功能。验证线上时，将浏览器打开地址替换为 `https://ai-loren.github.io/personal-homepage/`，运行同一个脚本即可；它支持项目子路径，仅对本地预览断言 `Cache-Control: no-store`，GitHub Pages 的 CDN 缓存策略由平台管理。
 
 `unlocked-fixture.mjs` 仅将完整数据与图片注入隔离测试浏览器，不写入 `dist/`，不开放额外 HTTP 路径，不修改真实开关。它复用 `career-modes.js` 验证保留的三模式、鼠标/键盘、路由与搜索状态、日期边界、320–1440px 菜单布局和深浅主题。原有 ByteDance 桌面/移动端 YAML 契约作为历史模式基线保留，不用于验收当前 Tencent 锁定发布。
 
@@ -113,7 +113,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 先运行 `node scripts/site.mjs build`，构建成功后**仅发布 `dist/` 的内容**，不要把它追加到仍包含旧源码文件的目录。`dist/` 已包含页面、裁剪后的数据、获准使用的图片、Three.js r160、字体及许可证。原始 `assets/` 是长期源资源，不可删除；仅未获准公开的公司图片不会被复制到产物。
 
 - **Cloudflare Pages / Netlify / Vercel**：使用 Node.js 20+，构建命令设为 `node scripts/site.mjs build`，输出目录设为 `dist`。关联源仓库时保持源仓库私有。
-- **GitHub Pages**：使用工作流只上传 `dist/` 产物，或将其内容发布到单独的发布目标；不要再从包含源码的 `main` 根目录部署。
+- **GitHub Pages**：仓库 **Settings → Pages → Source** 必须设为 **GitHub Actions**。`.github/workflows/pages.yml` 在推送到 `main` 或手动触发后，用 Node.js 24 运行发布隔离测试、执行与本地相同的构建命令，再只上传 `dist/` 并部署。测试或构建失败不会发布。可在 **Actions → Deploy GitHub Pages** 查看构建与部署状态；不要改回 `main` 根目录分支部署。
 - **手工上传**：用新 `dist/` 完整替换公开目录，确认 README、Git 元数据、脚本、测试、备份及旧公司 Logo 均不存在。构建失败时停止发布，不使用遗留产物继续上线。
 
 本站仍使用 hash 路由，不需要服务端重写规则，也可放在子目录中。上述托管设置需在平台上实际应用；修改本地代码不会自动调整已有线上部署。
