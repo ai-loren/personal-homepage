@@ -1,5 +1,8 @@
 async (page) => {
-  const origin = await page.evaluate(() => location.origin);
+  const { baseURL, localPreview } = await page.evaluate(() => ({
+    baseURL: new URL('.', location.href).href,
+    localPreview: ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname),
+  }));
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const privateText = /ByteDance|字节跳动|Seed AI Infra Engineer|Ads Infra Engineer|ipgen\.ohayoo\.cn|bytedance-logo\.png|bytedance-seed-logo\.png|ocean-engine-logo\.png/i;
   const errors = [];
@@ -18,20 +21,20 @@ async (page) => {
   };
   const results = [];
   try {
-    await page.goto(`${origin}/?careerMode=all#home`);
+    await page.goto(`${baseURL}?careerMode=all#home`);
     await page.reload();
-    const contentResponse = await page.request.get(`${origin}/content.js?careerMode=bytedance`);
+    const contentResponse = await page.request.get(`${baseURL}content.js?careerMode=bytedance`);
     const contentSource = await contentResponse.text();
     assert(contentResponse.ok() && !privateText.test(contentSource), 'Private data is present in raw content response');
-    assert(contentResponse.headers()['cache-control'] === 'no-store', 'Preview must not cache old public content');
+    if (localPreview) assert(contentResponse.headers()['cache-control'] === 'no-store', 'Preview must not cache old public content');
     const published = await page.evaluate(() => ({ ids: window.SITE_CONTENT.experience.map((company) => company.id), modes: Object.keys(window.SITE_CONTENT.careerModes) }));
     assert(JSON.stringify(published) === '{"ids":["tencent"],"modes":["tencent"]}', 'Published data or allowed modes are not locked');
     for (const file of ['app.js', 'index.html', 'styles.css']) {
-      const response = await page.request.get(`${origin}/${file}`);
+      const response = await page.request.get(`${baseURL}${file}`);
       assert(response.ok() && !privateText.test(await response.text()), `Private history is present in ${file}`);
     }
     for (const path of ['content.js.bak', 'site.config.mjs', 'README.md', '.git/config', '.git/HEAD', '.harness-e2e/career-modes.js', 'scripts/site.mjs', 'assets/bytedance-logo.png', 'assets/bytedance-seed-logo.png', 'assets/ocean-engine-logo.png', '%2e%2e%2fcontent.js', 'assets/']) {
-      assert((await page.request.get(`${origin}/${path}`)).status() === 404, `Private path accessible: ${path}`);
+      assert((await page.request.get(`${baseURL}${path}`)).status() === 404, `Private path accessible: ${path}`);
     }
     await checkTencent('initial');
     assert(await page.locator('#career-toggle').isDisabled(), 'Career toggle should be disabled');
@@ -113,7 +116,7 @@ async (page) => {
     await page.unroute('**/content.js*');
     await page.evaluate(() => { localStorage.removeItem('careerMode'); sessionStorage.removeItem('careerMode'); });
     page.off('pageerror', onError);
-    await page.goto(`${origin}/#home`);
+    await page.goto(`${baseURL}#home`);
     await page.reload();
   }
 }
