@@ -76,6 +76,9 @@
     && /^[\w.-]+\/[\w.-]+$/.test(comments.repo || '')
     && /^[\w-]+$/.test(comments.repoId || '')
     && /^[\w-]+$/.test(comments.categoryId || '');
+  // giscus.json 只放行正式域名，其他源嵌入会被 giscus 以 frame-ancestors 'none' 拒绝，只能换成提示。
+  const replySite = safeURL(comments.site || '');
+  const onReplySite = Boolean(replySite) && new URL(replySite).origin === location.origin;
   let replyFrame = null;
   const giscusTheme = () => (document.documentElement.dataset.theme === 'light' ? 'noborder_light' : 'transparent_dark');
 
@@ -125,8 +128,12 @@
   function mountReplies(question) {
     const container = $('#question-replies');
     if (!container) return;
-    if (!giscusReady) {
+    if (!giscusReady || !replySite) {
       container.innerHTML = '<p class="replies-pending">回复功能正在接入中，开放后这里可以留下你的答案。</p>';
+      return;
+    }
+    if (!onReplySite) {
+      container.innerHTML = `<p class="replies-pending">回复区只在正式网站加载，本地预览不显示。<a class="replies-site-link" href="${escapeHTML(replySite + detailHref('ideas', question.id))}" target="_blank" rel="noopener noreferrer">去正式网站查看回复 ↗</a></p>`;
       return;
     }
     replyFrame = document.createElement('iframe');
@@ -468,7 +475,12 @@
   function renderAbout() {
     $('#about-content').innerHTML = `
       <p class="about-lead">${about.lead.split(/(?<=，)/).map((clause) => `<span class="about-lead-clause">${escapeHTML(clause)}</span>`).join('')}</p>
-      <div class="about-copy">${about.paragraphs.map((paragraph) => `<p>${escapeHTML(paragraph)}</p>`).join('')}</div>
+      <div class="about-copy">${about.paragraphs.map((paragraph) => (paragraph.type === 'layers' ? `
+        <div class="about-layers">
+          <p>${escapeHTML(paragraph.intro)}</p>
+          <ol>${paragraph.items.map((item) => `<li><strong>${escapeHTML(item.title)}</strong><span>${escapeHTML(item.text)}</span></li>`).join('')}</ol>
+          <p class="about-layers-outro">${escapeHTML(paragraph.outro)}</p>
+        </div>` : `<p>${escapeHTML(paragraph)}</p>`)).join('')}</div>
       <dl class="about-facts">${about.facts.map((fact, index) => `
         <div data-column="${index < Math.ceil(about.facts.length / 2) ? 'left' : 'right'}"><dt>${escapeHTML(fact.label)}</dt><dd${fact.profile ? ` data-profile-field="${escapeHTML(fact.profile)}"` : ''}>${escapeHTML(fact.profile ? profile[fact.profile] : fact.value)}</dd></div>
       `).join('')}</dl>`;
@@ -814,7 +826,7 @@
     $('#ideas-list').innerHTML = ideas.map((idea) => `
       <a class="idea-item" href="${detailHref('ideas', idea.id)}"><time class="writing-date" datetime="${escapeHTML(idea.date)}">${escapeHTML(idea.date)}</time>
       <div class="idea-content"><h2>${escapeHTML(idea.title)}</h2><p>${escapeHTML(idea.text)}</p>
-      <div class="item-meta">${idea.tags.map((tag) => `<span># ${escapeHTML(tag)}</span>`).join('')}<span class="idea-reply">写下你的答案 ↗</span></div></div></a>`
+      <div class="item-meta">${idea.tags.map((tag) => `<span># ${escapeHTML(tag)}</span>`).join('')}<span class="idea-reply"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"></path><path d="M8.5 12h7M8.5 8.8h4.5"></path></svg>写下你的答案</span></div></div></a>`
     ).join('');
     if (!ideas.length) $('#ideas-list').innerHTML = '<p class="empty-state">给下一个问题留个位置。</p>';
   }

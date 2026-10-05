@@ -154,6 +154,15 @@ test('questions have stable unique ids and the reply config is well formed', () 
   for (const key of ['repoId', 'categoryId']) assert.match(comments[key], /^[\w-]*$/, `${key} must be an opaque GitHub id or empty`);
 });
 
+test('the reply site is allowed by giscus.json, which only lists https origins', async () => {
+  const site = new URL(source.comments.site);
+  assert.equal(site.protocol, 'https:', `comments.site must be the https production URL; got ${source.comments.site}`);
+  const { origins } = JSON.parse(await readFile(join(PROJECT_ROOT, 'giscus.json'), 'utf8'));
+  assert(Array.isArray(origins) && origins.length > 0, 'giscus.json must restrict origins; without it any site can post into the discussions');
+  assert(origins.every((origin) => new URL(origin).protocol === 'https:' && new URL(origin).origin === origin), `giscus.json origins must be bare https origins; got ${origins.join(', ')}`);
+  assert(origins.includes(site.origin), `giscus.json must allow ${site.origin}, or replies on the production site are refused`);
+});
+
 test('all and ByteDance publications still build with their allowed assets', async () => {
   for (const mode of ['all', 'bytedance']) {
     const files = await createPublicFiles({ visibility: mode });

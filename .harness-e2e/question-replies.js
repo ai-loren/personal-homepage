@@ -48,9 +48,24 @@ async (page) => {
     results.push('Without a category id the reply area shows a pending notice and loads nothing: PASS');
 
     await page.unroute('**/content.js*');
+    const site = await page.evaluate(() => window.SITE_CONTENT.comments.site);
+    const onProduction = site.startsWith(base) || base.startsWith(site);
+    if (!onProduction) {
+      await page.goto(`${base}#ideas`);
+      await page.reload();
+      await page.goto(`${base}#ideas/continual-learning`);
+      await page.waitForTimeout(500);
+      assert(await page.locator('#question-replies iframe').count() === 0, 'A non-production origin must not embed giscus (giscus.json refuses it)');
+      const link = page.locator('#question-replies .replies-site-link');
+      assert(await link.getAttribute('href') === `${site}#ideas/continual-learning`, `Notice should link to the same question on ${site}; got ${await link.getAttribute('href')}`);
+      assert(await link.getAttribute('rel') === 'noopener noreferrer' && await link.getAttribute('target') === '_blank', 'Production link must open safely in a new tab');
+      results.push('On a non-production origin the reply area links to the production question instead of loading giscus: PASS');
+    }
+
     await page.route('**/content.js*', async (route) => {
       const response = await route.fetch();
       const body = (await response.text())
+        .replace(/"site": "[^"]*"/, `"site": "${base}"`)
         .replace('"title": "模型能不能边用边学，而不必等下一次重训？"', '"title": "<img src=x onerror=alert(1)>"');
       await route.fulfill({ response, body });
     });

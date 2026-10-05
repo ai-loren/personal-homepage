@@ -23,8 +23,17 @@ window.SITE_CONTENT = {
   about: {
     lead: '我在做两件事：给大模型一片厚实的大地，给 Agent 一整片可以远行的星空。',
     paragraphs: [
-      '做大模型 AI Infra，好的机器学习系统和平台是基础模型训推的厚实地基；而在 AI for AI 的今天，Agentic ML Infra 更关键：让 Agent 也能理解、操作并改进这套 ML 平台。',
-      '我投入最多的几件事：给 ML 平台配上 Agent、Skill 与 CLI，让模型直接调用平台能力；做 Agent 运行时与 Harness，让每一次运行都看得见、停得下、复现得了；以及面向长程任务的 Multi-Agent 框架。',
+      '做大模型 AI Infra，好的机器学习系统和平台是基础模型训推的厚实地基；而在 AI for AI 的今天，Agentic ML Infra 则可以发挥更关键的作用：让 Agent 也能理解、操作并改进这套 ML Infra，提升模型训推效率，在单位时间内验证更多的 idea，以达到在平均时间周期内最快提升模型效果的能力。后期，Agentic ML Infra 将成为帮助 Foundation Model 完成 Auto Self-Evolution 的基石。',
+      {
+        type: 'layers',
+        intro: '我目前投入最多的几件事，从 ML Infra 到 Agent，穿针引线：',
+        items: [
+          { title: '让 ML 平台能被 Agent 使用', text: '把训练、评测、推理和资源调度这些平台能力，整理成 Agent 读得懂的契约：命令行从接口定义自动生成，平台加一个接口，Agent 就多一项能力；再配上写明陷阱的 Skill，让模型不靠截图和猜测，也能查任务、改配置、读日志、定位故障。' },
+          { title: '让 Agent 的每一次运行都可控', text: '做 Agent 运行时与 Harness：会改东西的操作先经过权限检查和人工确认，长任务能在任意一步停下、存档、换一台机器接着跑，每次运行都留下完整轨迹，出了问题能回放、能复现。它也决定了 Agent 何时跑、在哪跑、结果给谁看。' },
+          { title: '让多个 Agent 一起完成长程任务', text: '在运行时之上做 Multi-Agent 框架：任务能拆解、派发、互相验收，跑几百轮也不跑偏；验收的结论不只决定任务过没过，还会回流成训练数据，让下一代模型更会用这套平台。' },
+        ],
+        outro: '三层合在一起，是想回答一个问题：怎样让 Agent 成为 ML 平台真正的一等用户，而且越用越好。',
+      },
       '我相信好的 Agent 系统靠的不是更长的 Prompt，而是扎实的 Infra：清楚的工具契约、可以验证的结果、出错时说得明白的错误信息。',
       '工作之外，我会写下观察，也为没有明确用途的好奇心留出时间。',
     ],
@@ -1871,6 +1880,7 @@ window.SITE_CONTENT = {
   ],
   comments: {
     provider: 'giscus',
+    site: 'https://ai-loren.github.io/personal-homepage/',
     repo: 'ai-loren/personal-homepage',
     repoId: 'R_kgDOUhJb1g',
     category: 'Announcements',
