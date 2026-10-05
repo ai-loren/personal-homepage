@@ -1,0 +1,7 @@
+spike_id,tokens_b,loss_before,loss_peak,loss_jump,grad_norm_peak,grad_norm_rise_b,lead_b,action,wasted_tokens_b
+S1,180,2.065,2.648,0.583,4.65,161,19,rollback,28
+S2,310,1.965,2.370,0.405,3.22,285,25,continue,0
+S3,455,1.932,2.798,0.866,6.51,432,23,rollback,33
+S4,560,1.899,2.194,0.295,2.41,542,18,continue,0
+S5,690,1.898,2.407,0.509,4.13,663,27,continue,0
+S6,830,1.866,2.217,0.351,2.81,809,21,continue,0

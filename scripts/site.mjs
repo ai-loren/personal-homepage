@@ -19,6 +19,7 @@ const PUBLIC_FILES = [
   'assets/xidian-university-emblem.png',
   'vendor/three.min.js', 'vendor/THREE-LICENSE.txt',
   'vendor/fonts/cormorant-garamond.ttf', 'vendor/fonts/ibm-plex-mono.ttf',
+  'vendor/fonts/ibm-plex-mono-semibold.ttf', 'vendor/fonts/IBM-PLEX-OFL.txt',
   'vendor/fonts/manrope.ttf', 'vendor/fonts/noto-serif-sc-subset.woff2',
   'vendor/fonts/pinyon-script.ttf',
 ];
@@ -27,8 +28,9 @@ const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
   '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.ttf': 'font/ttf',
-  '.woff2': 'font/woff2',
+  '.woff2': 'font/woff2', '.csv': 'text/csv; charset=utf-8',
 };
+const DATASET_PATH = /^\.\/data\/lab\/[a-z0-9-]+\/[a-z0-9_-]+\.csv$/;
 
 async function readSourceFile(root, name) {
   const sourceRoot = await realpath(root);
@@ -70,10 +72,14 @@ function assertNoPrivateCareer(files, source, publicContent) {
   const markers = source.experience.filter((company) => !published.has(company.id)).flatMap((company) => [
     ...(PRIVATE_MARKERS[company.id] || []),
     company.company, company.profileRole, company.logo, company.logoAlt,
-    ...company.roles.flatMap((role) => [role.title, role.logo, role.logoAlt, ...(role.highlights || [])]),
+    ...company.roles.flatMap((role) => [
+      role.title, role.logo, role.logoAlt,
+      // 单词亮点不当泄漏标记：公开简介会写同一类技术词。含空格的整句亮点仍拦住未公开公司的原文。
+      ...(role.highlights || []).filter((item) => /\s/.test(item)),
+    ]),
   ]).filter(Boolean).map((marker) => marker.toLowerCase());
   for (const [name, buffer] of files) {
-    if (!['.html', '.js', '.css', '.txt'].includes(extname(name))) continue;
+    if (!['.html', '.js', '.css', '.txt', '.csv'].includes(extname(name))) continue;
     const text = buffer.toString('utf8').toLowerCase();
     if (markers.some((marker) => text.includes(marker))) {
       throw new Error(`${name} contains an excluded company's information. Remove its public reference before building; private content.js data can remain.`);
@@ -94,7 +100,26 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
       paths.add(entry.logo.slice(2));
     }
   }
-  const files = new Map(await Promise.all([...paths].map(async (name) => [name, await readSourceFile(root, name)])));
+  const datasets = new Set();
+  for (const experiment of content.experiments || []) {
+    for (const dataset of experiment.datasets || []) {
+      if (!DATASET_PATH.test(dataset.file)) {
+        throw new Error(`Dataset of experiment ${experiment.id} expects ./data/lab/<experiment>/<name>.csv (lowercase, no traversal); got ${dataset.file}. Move the file there and update content.js.`);
+      }
+      paths.add(dataset.file.slice(2));
+      datasets.add(dataset.file.slice(2));
+    }
+  }
+  const files = new Map(await Promise.all([...paths].map(async (name) => {
+    try {
+      return [name, await readSourceFile(root, name)];
+    } catch (error) {
+      if (error.code === 'ENOENT' && datasets.has(name)) {
+        throw new Error(`Dataset ${name} is listed in content.js experiments but missing on disk. Generate the CSV or remove its datasets entry.`);
+      }
+      throw error;
+    }
+  })));
   files.set('content.js', Buffer.from(`window.SITE_CONTENT = ${JSON.stringify(content, null, 2)};\n`));
   assertNoPrivateCareer(files, source, content);
   return files;

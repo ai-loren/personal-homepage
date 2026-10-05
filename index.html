@@ -2,19 +2,20 @@
 <html lang="zh-CN" data-theme="dark" data-page="home">
   <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; frame-src https://giscus.app; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0c1014">
     <meta name="description" content="一个关于创造、技术与日常思考的个人空间。">
     <title>Loren's Galaxy</title>
     <link rel="icon" type="image/png" sizes="128x128" href="./assets/lorens-saturn-favicon.png?v=20260921-1">
     <link rel="preload" href="./vendor/fonts/noto-serif-sc-subset.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="./styles.css?v=20260928-locked1">
+    <link rel="stylesheet" href="./styles.css?v=20261006-replies">
     <script src="./vendor/three.min.js" defer></script>
-    <script src="./content.js?v=20260928-locked1" defer></script>
-    <script src="./app.js?v=20260928-locked1" defer></script>
+    <script src="./content.js?v=20261006-replies-live" defer></script>
+    <script src="./app.js?v=20261006-replies" defer></script>
     <script src="./globe-renderer.js" defer></script>
     <script src="./cosmos.js?v=20260922-17" defer></script>
-    <script src="./solar-system-3d.js?v=20260922-16" defer></script>
+    <script src="./solar-system-3d.js?v=20261005-title" defer></script>
     <script src="./page-scenes.js?v=20260922-12" defer></script>
   </head>
   <body>
@@ -31,7 +32,7 @@
           <a href="#lab" data-nav="lab"><span class="celestial-icon" data-celestial-icon="mars" aria-hidden="true"></span>实验 <span class="nav-en">Lab</span></a>
           <a href="#journey" data-nav="journey"><span class="celestial-icon" data-celestial-icon="jupiter" aria-hidden="true"></span>经历 <span class="nav-en">Journey</span></a>
           <a href="#library" data-nav="library"><span class="celestial-icon celestial-icon-saturn" data-celestial-icon="saturn" data-ring="layered" aria-hidden="true"></span>收藏 <span class="nav-en">Library</span></a>
-          <a href="#ideas" data-nav="ideas"><span class="celestial-icon" data-celestial-icon="neptune" aria-hidden="true"></span>随想 <span class="nav-en">Ideas</span></a>
+          <a href="#ideas" data-nav="ideas"><span class="celestial-icon" data-celestial-icon="neptune" aria-hidden="true"></span>问题 <span class="nav-en">Questions</span></a>
         </nav>
         <div class="header-actions">
           <button class="icon-button motion-toggle" type="button" aria-label="暂停星空动效" aria-pressed="false" title="暂停星空动效">
@@ -71,7 +72,7 @@
         <a href="#lab" data-nav="lab"><span class="celestial-icon" data-celestial-icon="mars" aria-hidden="true"></span>实验 <span>Lab</span></a>
         <a href="#journey" data-nav="journey"><span class="celestial-icon" data-celestial-icon="jupiter" aria-hidden="true"></span>经历 <span>Journey</span></a>
         <a href="#library" data-nav="library"><span class="celestial-icon celestial-icon-saturn" data-celestial-icon="saturn" data-ring="layered" aria-hidden="true"></span>收藏 <span>Library</span></a>
-        <a href="#ideas" data-nav="ideas"><span class="celestial-icon" data-celestial-icon="neptune" aria-hidden="true"></span>随想 <span>Ideas</span></a>
+        <a href="#ideas" data-nav="ideas"><span class="celestial-icon" data-celestial-icon="neptune" aria-hidden="true"></span>问题 <span>Questions</span></a>
       </nav>
 
       <main id="main" tabindex="-1">
@@ -79,7 +80,6 @@
           <div class="hero">
             <canvas class="solar-system-3d" aria-hidden="true"></canvas>
             <div class="hero-copy">
-              <p class="eyebrow" aria-hidden="true"></p>
               <p class="terminal-command" aria-hidden="true"><span>~</span> / whoami <span class="terminal-cursor"></span></p>
               <div class="hero-identity">
                 <figure class="hero-portrait">
@@ -87,7 +87,7 @@
                 </figure>
                 <h1 id="home-title">你好，我是<br><span class="hero-name" data-profile="name">loren</span><span class="hero-period">.</span></h1>
               </div>
-              <p class="hero-intro" data-profile="intro">写代码，做产品，记录有意思的想法。</p>
+              <p class="hero-intro">写代码，做产品，记录有意思的想法，<span class="hero-motto">Carpe Diem</span></p>
               <dl class="hero-profile-meta" aria-label="职业经历与所在地区">
                 <div>
                   <dt>ROLE / 职业经历</dt>
@@ -101,7 +101,13 @@
                   </dd>
                 </div>
               </dl>
-              <p class="hero-description" data-profile="description">相信好的东西来自好奇心，也来自把一个小想法认真做完。这里是我的作品、文字，和一些尚未成形的灵感。</p>
+              <p class="hero-focus-label" id="hero-focus-title">EXPERTISE / 能力与经验</p>
+              <ul class="hero-focus" id="hero-focus" aria-labelledby="hero-focus-title">
+                <li>ML Infra 平台：全栈研发</li>
+                <li>Agentic ML Infra：ML平台 Agent、Skill 与 CLI</li>
+                <li>Agent 运行时：ADK 与 Harness</li>
+                <li>Multi-Agent 框架：Long-Horizon 任务</li>
+              </ul>
               <a class="hero-education" href="#journey" aria-label="查看教育经历">
                 <span class="hero-education-emblem">
                   <img src="./assets/xidian-university-emblem.png" width="267" height="267" alt="西安电子科技大学校徽">
@@ -117,13 +123,9 @@
                 <a class="button button-primary" href="#projects">看看我的作品 <span aria-hidden="true">↗</span></a>
                 <a class="text-link" href="#contact">来打个招呼 <span aria-hidden="true">↗</span></a>
               </div>
-              <div class="hero-footnotes">
-                <div class="hero-footnote"><span class="tiny-cross" aria-hidden="true">+</span><span data-profile="note">保持好奇，持续创造。</span><span class="demo-marker" data-demo-label>内容示例</span></div>
-                <div class="hero-footnote hero-footnote-alt"><span class="tiny-cross" aria-hidden="true">+</span><span data-profile="noteAlt">Carpe diem · 此心安处是吾乡。</span></div>
-              </div>
             </div>
             <div class="universe" aria-label="探索 loren 的个人太阳系">
-              <div class="universe-coordinate coordinate-top" aria-hidden="true">LOREN'S SOLAR SYSTEM</div>
+              <div class="universe-coordinate coordinate-top" aria-hidden="true"><span class="coordinate-building">Continuously Building</span><span class="coordinate-name">LOREN'S SOLAR SYSTEM</span></div>
               <div class="universe-coordinate coordinate-bottom" aria-hidden="true">RELATIVE DIAMETERS · COMPRESSED</div>
               <div class="orbit orbit-one" aria-hidden="true"></div>
               <div class="orbit orbit-two" aria-hidden="true"></div>
@@ -142,7 +144,7 @@
               <a class="planet-link planet-journey" data-orbit="five" data-body="jupiter" href="#journey" aria-label="经历，木星，直径 139,820 公里"><span class="planet planet-jupiter" aria-hidden="true"><canvas class="planet-surface" data-world="jupiter" width="192" height="192"></canvas></span><span class="planet-label">经历 <em>Jupiter ↗</em><small>Ø 139,820 km</small></span></a>
               <a class="planet-link planet-library" data-orbit="six" data-body="saturn" href="#library" aria-label="收藏，土星，直径 116,460 公里"><span class="planet planet-saturn" data-ring="layered" aria-hidden="true"><canvas class="planet-surface" data-world="saturn" width="160" height="160"></canvas></span><span class="planet-label">收藏 <em>Saturn ↗</em><small>Ø 116,460 km</small></span></a>
               <span class="decorative-world world-uranus" data-orbit="seven" data-body="uranus" data-name="Uranus" data-diameter="Ø 50,724 km"><canvas class="planet-surface" data-world="uranus" width="96" height="96" aria-hidden="true"></canvas><span class="planet-label">天王星 <em>Uranus</em><small>Ø 50,724 km</small></span></span>
-              <a class="planet-link planet-ideas" data-orbit="eight" data-body="neptune" href="#ideas" aria-label="随想，海王星，直径 49,244 公里"><span class="planet planet-neptune" aria-hidden="true"><canvas class="planet-surface" data-world="neptune" width="128" height="128"></canvas></span><span class="planet-label">随想 <em>Neptune ↗</em><small>Ø 49,244 km</small></span></a>
+              <a class="planet-link planet-ideas" data-orbit="eight" data-body="neptune" href="#ideas" aria-label="问题，海王星，直径 49,244 公里"><span class="planet planet-neptune" aria-hidden="true"><canvas class="planet-surface" data-world="neptune" width="128" height="128"></canvas></span><span class="planet-label">问题 <em>Neptune ↗</em><small>Ø 49,244 km</small></span></a>
               <span class="constellation-star star-a" aria-hidden="true">✦</span>
               <span class="constellation-star star-b" aria-hidden="true">+</span>
               <span class="constellation-star star-c" aria-hidden="true">+</span>
@@ -177,12 +179,12 @@
           <div class="home-bottom">
             <section class="currently-block" aria-labelledby="currently-title">
               <h2 class="section-kicker" id="currently-title"><span class="status-dot"></span>此刻 / NOW</h2>
-              <p data-profile="now">正在把脑海里的想法，变成可以被使用的小东西。</p>
-              <span class="muted-note" data-profile="nowNote">慢一点，也没关系。</span>
+              <p data-profile="now">Building Hunyuan's Agentic ML Infra, where agents run the ML stack.</p>
+              <span class="muted-note" data-profile="nowNote">让 Agent 成为 ML 平台的一等用户。</span>
             </section>
             <section class="latest-block" aria-labelledby="latest-title">
-              <div class="section-heading"><h2 class="section-kicker" id="latest-title">最近写下 / LATEST NOTE</h2><a class="subtle-link" href="#writing">全部文字 ↗</a></div>
-              <a class="latest-note" id="latest-note" href="#writing"><span class="latest-note-title">给自己留一块互联网自留地</span><span class="latest-note-arrow" aria-hidden="true">↗</span></a>
+              <div class="section-heading"><h2 class="section-kicker" id="latest-title"><span class="status-dot is-static"></span>最近写下 / LATEST NOTE</h2><a class="subtle-link" href="#writing">全部文字 ↗</a></div>
+              <a class="latest-note" id="latest-note" href="#writing"><span class="latest-note-title">工程为效率负责，算法为效果负责</span><span class="latest-note-arrow" aria-hidden="true">↗</span></a>
               <span class="muted-note" id="latest-note-meta">关于创造，也关于记录。</span>
             </section>
           </div>
@@ -191,10 +193,9 @@
         <section class="view content-view" data-view="about" aria-labelledby="about-title" hidden>
           <header class="page-heading"><p class="eyebrow">THE INNER ORBIT</p><h1 id="about-title">关于<span class="title-period">.</span></h1><p>一些构成我的兴趣、方法与方向。</p></header>
           <div class="about-layout">
-            <div class="about-monogram" aria-hidden="true"><span>L</span><i></i></div>
             <div id="about-content"></div>
           </div>
-          <p class="page-endnote">认识一个人，需要比一段简介更久。<span data-demo-label>当前介绍为演示内容</span></p>
+          <p class="page-endnote">认识一个人，需要比一段简介更久。</p>
         </section>
 
         <section class="view content-view" data-view="writing" aria-labelledby="writing-title" hidden>
@@ -204,8 +205,9 @@
             <label class="search-field"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="6"></circle><path d="m15 15 5 5"></path></svg><input id="writing-search" type="search" placeholder="搜索文字…" aria-label="搜索文章"></label>
           </div>
           <div class="writing-list" id="writing-list"></div>
+          <nav class="pagination" id="writing-pagination" aria-label="文章分页" hidden></nav>
           <p class="empty-state" id="writing-empty" role="status" hidden>还没有找到相关文字。试试其他关键词，或选择「全部」。</p>
-          <p class="page-endnote">文字不必很多，真诚就好。<span data-demo-label>当前文章为演示内容</span></p>
+          <p class="page-endnote">文字不必很多，真诚就好。</p>
         </section>
 
         <section class="view content-view" data-view="projects" aria-labelledby="projects-title" hidden>
@@ -218,7 +220,7 @@
         <section class="view content-view" data-view="lab" aria-labelledby="lab-title" hidden>
           <header class="page-heading"><p class="eyebrow">EXPERIMENTS IN ORBIT</p><h1 id="lab-title">实验<span class="title-period">.</span></h1><p>还不一定是作品，但已经值得动手验证。</p></header>
           <div class="experiment-grid" id="experiment-list"></div>
-          <p class="page-endnote">允许失败，也允许只学到一件小事。<span data-demo-label>当前实验为演示内容</span></p>
+          <p class="page-endnote">允许失败，也允许只学到一件小事。<span data-demo-label>当前实验数据为模拟示意</span></p>
         </section>
 
         <section class="view content-view" data-view="journey" aria-labelledby="journey-title" hidden>
@@ -243,22 +245,22 @@
         </section>
 
         <section class="view content-view" data-view="library" aria-labelledby="library-title" hidden>
-          <header class="page-heading"><p class="eyebrow">THINGS WORTH KEEPING</p><h1 id="library-title">收藏<span class="title-period">.</span></h1><p>长期影响我的书、工具、声音和互联网角落。</p></header>
+          <header class="page-heading"><p class="eyebrow">THINGS WORTH KEEPING</p><h1 id="library-title">收藏<span class="title-period">.</span></h1><p>奠基的经典论文与最近的前沿论文，以及长期影响我的文章、书、博客与工具。点开即是原文。</p></header>
           <div class="library-list" id="library-list"></div>
-          <p class="page-endnote">好的收藏不是囤积，而是不断返回。<span data-demo-label>当前收藏为演示内容</span></p>
+          <p class="page-endnote">好的收藏不是囤积，而是不断返回。</p>
         </section>
 
         <section class="view content-view" data-view="ideas" aria-labelledby="ideas-title" hidden>
-          <header class="page-heading"><p class="eyebrow">A DIGITAL GARDEN</p><h1 id="ideas-title">随想<span class="title-period">.</span></h1><p>允许想法不完整。那些还不能写成文章的碎片，先放在这里。</p></header>
+          <header class="page-heading"><p class="eyebrow">OPEN QUESTIONS</p><h1 id="ideas-title">问题<span class="title-period">.</span></h1><p>还没有答案、但值得一直想下去的问题。想明白一个，就写成文字。</p></header>
           <div class="ideas-list" id="ideas-list"></div>
-          <p class="page-endnote">想到什么，就记下来。<span data-demo-label>当前随想为演示内容</span></p>
+          <p class="page-endnote">好的问题，比答案活得更久。</p>
         </section>
       </main>
 
       <footer class="site-footer" id="contact">
         <div class="contact-copy"><h2>很高兴在这里遇见你<span>.</span></h2><p>关于技术、想法，或者只是打个招呼。</p></div>
         <div class="contact-actions" id="contact-actions"></div>
-        <div class="footer-bottom"><span>© <span id="year"></span> <span data-profile="name">loren</span></span><span>用好奇心建造 <span class="footer-star" aria-hidden="true">✳</span> 持续生长中</span><a href="#home">回到首页 ↑</a></div>
+        <div class="footer-bottom"><span>© <span id="year"></span> <span class="footer-name" data-profile="name">loren</span></span><span>用好奇心建造 <span class="footer-star" aria-hidden="true">✳</span> 持续生长中</span><a href="#home">回到首页 ↑</a></div>
       </footer>
     </div>
 
@@ -271,6 +273,6 @@
       <p class="eyebrow">SAY HELLO</p><h2 id="contact-title">期待与你认识。</h2><p id="contact-message"></p><div id="contact-details"></div>
     </dialog>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <noscript><div class="noscript-note">首页可以直接阅读。浏览作品、文章和随想需要在浏览器中启用 JavaScript。</div></noscript>
+    <noscript><div class="noscript-note">首页可以直接阅读。浏览作品、文章和问题需要在浏览器中启用 JavaScript。</div></noscript>
   </body>
 </html>

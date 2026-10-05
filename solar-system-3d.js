@@ -689,10 +689,14 @@
   let ufoIntensityScale = 1;
   let ufoColor = 'moon';
   let hoverLeaveTimer = 0;
-  let hoverExitGrace = null;
-  let hoverExitDeadline = 0;
-  let lastBodyPointer = null;
+  let release = null;
+  let ufoDragging = false;
   const pointerClient = { x: Number.NaN, y: Number.NaN };
+  // 星球与灯光面板之间隔着一段空白：离开星球后先给宽限，只要还在靠近面板就续期，背离或停住超时才收回。
+  const RELEASE_GRACE_MS = 600;
+  const RELEASE_APPROACH_MS = 450;
+  const RELEASE_MAX_MS = 1600;
+  const RELEASE_RETREAT_PX = 24;
 
   const readStoredUfoSetting = (key) => {
     try { return localStorage.getItem(key); } catch { return null; }
@@ -777,15 +781,12 @@
     if (body) {
       clearTimeout(hoverLeaveTimer);
       hoverLeaveTimer = 0;
+      release = null;
     }
     if (hoveredBody === body) return;
     if (hoveredBody) bodyNodes.get(hoveredBody)?.classList.remove('is-three-hovered');
     hoveredBody = body;
-    if (!body) {
-      hoverExitGrace = null;
-      lastBodyPointer = null;
-      hoverExitDeadline = 0;
-    }
+    if (!body) release = null;
     if (body) bodyNodes.get(body)?.classList.add('is-three-hovered');
     universe.dataset.activeBody = body || '';
     universe.dataset.sceneFocus = body ? 'true' : 'false';
@@ -804,7 +805,8 @@
   };
   const shouldRetainHoveredBody = (includeControlFocus = true) => {
     const activeNode = hoveredBody && bodyNodes.get(hoveredBody);
-    return Boolean(ufoControls?.matches(':hover'))
+    return ufoDragging
+      || Boolean(ufoControls?.matches(':hover'))
       || Boolean(includeControlFocus && ufoControls?.contains(document.activeElement))
       || pointerWithinNode(activeNode)
       || Boolean(activeNode?.contains(document.activeElement));
@@ -812,50 +814,63 @@
   const scheduleHoverClear = (delay = 120, includeControlFocus = true) => {
     clearTimeout(hoverLeaveTimer);
     hoverLeaveTimer = window.setTimeout(() => {
-      const retained = shouldRetainHoveredBody(includeControlFocus);
-      const corridorRemaining = hoverExitGrace
-        ? Math.max(0, hoverExitDeadline - performance.now())
-        : 0;
-      if (retained) return;
-      if (corridorRemaining > 0) {
-        scheduleHoverClear(corridorRemaining, includeControlFocus);
+      hoverLeaveTimer = 0;
+      if (!hoveredBody || shouldRetainHoveredBody(includeControlFocus)) return;
+      const remaining = release ? release.deadline - performance.now() : 0;
+      if (remaining > 0) {
+        scheduleHoverClear(remaining, includeControlFocus);
         return;
       }
       setHovered(null);
-    }, delay);
+    }, Math.max(0, delay));
   };
-  const pointInTriangle = (point, first, second, third) => {
-    const sign = (left, right, top) => (
-      (left.x - top.x) * (right.y - top.y) - (right.x - top.x) * (left.y - top.y)
-    );
-    const sideA = sign(point, first, second);
-    const sideB = sign(point, second, third);
-    const sideC = sign(point, third, first);
-    return !((sideA < 0 || sideB < 0 || sideC < 0)
-      && (sideA > 0 || sideB > 0 || sideC > 0));
-  };
-  const makeControlCorridor = (origin) => {
-    if (!ufoControls || hoveredBody === 'sun') return null;
+  const distanceToControls = (point) => {
     const rect = ufoControls.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const horizontal = Math.abs(centerX - origin.x) > Math.abs(centerY - origin.y);
-    const padding = 28;
-
-    if (horizontal) {
-      const edgeX = centerX > origin.x ? rect.left - padding : rect.right + padding;
-      return {
-        origin,
-        first: { x: edgeX, y: rect.top - padding },
-        second: { x: edgeX, y: rect.bottom + padding },
-      };
+    const dx = Math.max(rect.left - point.x, 0, point.x - rect.right);
+    const dy = Math.max(rect.top - point.y, 0, point.y - rect.bottom);
+    return Math.hypot(dx, dy);
+  };
+  // 太阳没有灯光面板，离开即收回；其余天体先进宽限期，由 trackRelease 按是否在靠近面板续期或收回。
+  const beginRelease = (point) => {
+    if (!hoveredBody) return;
+    if (hoveredBody === 'sun' || !ufoControls) {
+      setHovered(null);
+      return;
     }
-    const edgeY = centerY > origin.y ? rect.top - padding : rect.bottom + padding;
-    return {
-      origin,
-      first: { x: rect.left - padding, y: edgeY },
-      second: { x: rect.right + padding, y: edgeY },
-    };
+    if (release) return;
+    const now = performance.now();
+    release = { started: now, deadline: now + RELEASE_GRACE_MS, nearest: distanceToControls(point) };
+    scheduleHoverClear(RELEASE_GRACE_MS, false);
+  };
+  const trackRelease = (point) => {
+    if (!release) {
+      beginRelease(point);
+      return;
+    }
+    const distance = distanceToControls(point);
+    if (distance > release.nearest + RELEASE_RETREAT_PX) {
+      setHovered(null);
+      return;
+    }
+    if (distance < release.nearest) {
+      release.nearest = distance;
+      const now = performance.now();
+      release.deadline = Math.min(release.started + RELEASE_MAX_MS, Math.max(release.deadline, now + RELEASE_APPROACH_MS));
+      scheduleHoverClear(release.deadline - now, false);
+    }
+  };
+
+  const heroCopy = interactionStage.querySelector('.hero-copy');
+  // 大屏上左栏整体 zoom 放大，多占出的宽度让太阳系向右让；不让的话木星、土星的初始位置正压在文字底下。
+  // 上限 6% 宽度：再多海王星转到轨道最右端时会出画面。
+  const sceneShiftFor = (width) => {
+    const zoom = heroCopy ? parseFloat(getComputedStyle(heroCopy).zoom) || 1 : 1;
+    if (zoom <= 1) return 0;
+    const start = heroCopy.querySelector('.terminal-command')?.getBoundingClientRect().left;
+    const blocks = [...heroCopy.querySelectorAll('.hero-profile-meta, .hero-focus, .hero-education')];
+    if (!Number.isFinite(start) || !blocks.length) return 0;
+    const contentWidth = Math.max(...blocks.map((block) => block.getBoundingClientRect().right)) - start;
+    return clamp(contentWidth * (1 - 1 / zoom) * 1.2, 0, width * .06);
   };
 
   const resize = () => {
@@ -865,8 +880,17 @@
     const mobile = rect.width < 500;
     camera.position.set(0, mobile ? 10.2 : 9.6, mobile ? 16.4 : 15.6);
     camera.lookAt(0, 0, 0);
+    const shift = sceneShiftFor(rect.width);
+    if (shift > 0) camera.setViewOffset(rect.width, rect.height, -shift, 0, rect.width, rect.height);
+    else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     universe.dataset.layout = 'fitted';
+    universe.dataset.sceneShift = String(Math.round(shift));
+    // 标题跟着全景机位下太阳的位置走，不能逐帧取：悬停时镜头飞向行星，标题会跟着乱跑。
+    camera.updateMatrixWorld();
+    const sunScreen = new THREE.Vector3().project(camera);
+    const sunX = (sunScreen.x * .5 + .5) * rect.width + rect.left - universe.getBoundingClientRect().left;
+    universe.style.setProperty('--sun-x', `${sunX.toFixed(1)}px`);
   };
 
   const projectLabels = (now) => {
@@ -976,7 +1000,7 @@
       setHovered(pickedBody, 'raycast');
     } else if (hoveredBody) {
       emptyFrames += 1;
-      if (emptyFrames > 6) setHovered(null);
+      if (emptyFrames > 6 && !shouldRetainHoveredBody(false)) beginRelease(pointerClient);
     }
     raycastBodyAtPointer = pickedBody;
     return pickedBody;
@@ -986,6 +1010,7 @@
   interactionStage.addEventListener('pointermove', (event) => {
     pointerClient.x = event.clientX;
     pointerClient.y = event.clientY;
+    if (ufoDragging) return;
     if (isProtectedControl(event.target)) {
       raycastBodyAtPointer = null;
       return;
@@ -995,19 +1020,13 @@
     pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     cameraTarget.x = pointer.x;
     cameraTarget.y = pointer.y;
-    const pickedBody = pick();
-    if (pickedBody) {
-      lastBodyPointer = { x: pointerClient.x, y: pointerClient.y };
-      hoverExitGrace = null;
-      hoverExitDeadline = 0;
-      clearTimeout(hoverLeaveTimer);
-    }
+    pick();
   }, { passive: true });
   interactionStage.addEventListener('pointerleave', () => {
     pointer.set(2, 2);
     cameraTarget.set(0, 0);
     raycastBodyAtPointer = null;
-    setHovered(null);
+    if (!ufoDragging) setHovered(null);
   });
   interactionStage.addEventListener('click', (event) => {
     if (isProtectedControl(event.target)) return;
@@ -1024,35 +1043,14 @@
     node.addEventListener('pointerenter', (event) => {
       pointerClient.x = event.clientX;
       pointerClient.y = event.clientY;
-      lastBodyPointer = { x: pointerClient.x, y: pointerClient.y };
-      hoverExitGrace = null;
-      hoverExitDeadline = 0;
       setHovered(body, 'dom');
     });
     const leaveBody = (event) => {
       if (hoveredBody !== body) return;
       pointerClient.x = event.clientX;
       pointerClient.y = event.clientY;
-      const rect = node.getBoundingClientRect();
-      hoverExitGrace = makeControlCorridor(lastBodyPointer || {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      });
-      hoverExitDeadline = performance.now() + 520;
-      const movingToControls = Boolean(ufoControls?.contains(event.relatedTarget))
-        || Boolean(hoverExitGrace && pointInTriangle(
-          pointerClient,
-          hoverExitGrace.origin,
-          hoverExitGrace.first,
-          hoverExitGrace.second,
-        ));
-      if (!movingToControls) {
-        hoverExitGrace = null;
-        hoverExitDeadline = 0;
-        setHovered(null);
-        return;
-      }
-      scheduleHoverClear();
+      if (ufoControls?.contains(event.relatedTarget)) return;
+      beginRelease(pointerClient);
     };
     node.addEventListener('pointerleave', leaveBody);
     node.addEventListener('mouseleave', leaveBody);
@@ -1060,56 +1058,38 @@
     node.addEventListener('focusout', () => scheduleHoverClear(100));
   }
   const handleHoverPointerMove = (event) => {
-    const point = { x: event.clientX, y: event.clientY };
-    pointerClient.x = point.x;
-    pointerClient.y = point.y;
+    pointerClient.x = event.clientX;
+    pointerClient.y = event.clientY;
     const activeNode = hoveredBody && bodyNodes.get(hoveredBody);
-    if (!activeNode || ufoControls?.matches(':hover') || ufoControls?.contains(event.target)) return;
+    if (!activeNode || ufoDragging || ufoControls?.matches(':hover') || ufoControls?.contains(event.target)) return;
     if (raycastBodyAtPointer === hoveredBody || pointerWithinNode(activeNode)) {
-      lastBodyPointer = point;
-      hoverExitGrace = null;
-      hoverExitDeadline = 0;
+      release = null;
       clearTimeout(hoverLeaveTimer);
+      hoverLeaveTimer = 0;
       return;
     }
-    if (!hoverExitGrace) {
-      const rect = activeNode.getBoundingClientRect();
-      hoverExitGrace = makeControlCorridor(lastBodyPointer || {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      });
-      hoverExitDeadline = performance.now() + 520;
-      scheduleHoverClear();
-    }
-    if (!hoverExitGrace) return;
-    const nearExit = Math.hypot(
-      point.x - hoverExitGrace.origin.x,
-      point.y - hoverExitGrace.origin.y,
-    ) < 24;
-    if (nearExit) return;
-    if (performance.now() < hoverExitDeadline && pointInTriangle(
-      point,
-      hoverExitGrace.origin,
-      hoverExitGrace.first,
-      hoverExitGrace.second,
-    )) {
-      scheduleHoverClear(140);
-      return;
-    }
-    hoverExitGrace = null;
-    hoverExitDeadline = 0;
-    setHovered(null);
+    trackRelease(pointerClient);
   };
   document.addEventListener('pointermove', handleHoverPointerMove, { passive: true });
   document.addEventListener('mousemove', handleHoverPointerMove, { passive: true });
   ufoControls?.addEventListener('pointerenter', () => {
-    hoverExitGrace = null;
-    hoverExitDeadline = 0;
+    release = null;
     clearTimeout(hoverLeaveTimer);
+    hoverLeaveTimer = 0;
   });
   ufoControls?.addEventListener('pointerleave', () => {
-    scheduleHoverClear(120, false);
+    if (!ufoDragging) scheduleHoverClear(120, false);
   });
+  // 拖动滑块时指针常会滑出面板，按住期间不能收回，否则光照调到一半面板就消失了。
+  ufoControls?.addEventListener('pointerdown', () => { ufoDragging = true; });
+  const endUfoDrag = () => {
+    if (!ufoDragging) return;
+    ufoDragging = false;
+    if (!ufoControls.matches(':hover')) scheduleHoverClear(120, false);
+  };
+  document.addEventListener('pointerup', endUfoDrag);
+  document.addEventListener('pointercancel', endUfoDrag);
+  window.addEventListener('blur', endUfoDrag);
   ufoControls?.addEventListener('focusin', () => clearTimeout(hoverLeaveTimer));
   ufoControls?.addEventListener('focusout', () => scheduleHoverClear(100));
 
@@ -1353,7 +1333,7 @@
   universe.dataset.ufoStyle = 'chibi-alien-3d';
   universe.dataset.ufoSize = 'compact';
   universe.dataset.hoverEmphasis = 'planet';
-  universe.dataset.hoverRelease = 'bounded-fast-return-v2';
+  universe.dataset.hoverRelease = 'approach-grace-v3';
   universe.dataset.cameraState = 'overview';
   universe.dataset.ufoControls = 'hidden';
   const startupMs = performance.now();

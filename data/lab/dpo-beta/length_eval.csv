@@ -1,0 +1,4 @@
+model,avg_response_tokens,length_change_pct,win_rate_vs_sft_pct,length_controlled_win_rate_pct
+sft,312,0.0,50.0,50.0
+dpo_beta_0.1,331,6.1,58.4,56.9
+dpo_beta_0.01,378,21.2,66.2,59.8

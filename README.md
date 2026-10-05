@@ -32,13 +32,14 @@ node scripts/site.mjs serve
 | `profile.name` | 首页、站点标识和页脚上的名字 |
 | `profile.siteTitle` | 首页浏览器标题 |
 | `profile.intro` / `description` | 简短介绍 / 详细介绍 |
+| `profile.motto` | 首页介绍句末尾的金色书法短语；留空时介绍句以句号结尾 |
 | `profile.now` / `nowNote` | 首页「此刻」内容 |
 | `profile.email` | 联系邮箱；留空时显示未提供联系方式 |
 | `profile.github` | 完整 GitHub 主页地址；留空时隐藏入口 |
 | `profile.demo` | 初始为 `true`，替换所有示例后改为 `false` |
 | `articles` | 文章，按展示顺序排列；第一篇显示在首页 |
 | `projects` | 项目介绍、分类、技术标签及外部链接 |
-| `ideas` | 简短随想，按展示顺序排列 |
+| `ideas` | 「问题」栏：还在想的开放问题，按展示顺序排列（栏目 id 仍为 `ideas`） |
 
 文章与项目的 `body` 支持 `p`（段落）、`h3`（小标题）、`quote`（引用）和 `ul`（列表）。正文按纯文本渲染，不解析 HTML 或 Markdown。
 
@@ -46,7 +47,7 @@ node scripts/site.mjs serve
 
 项目的 `url` 是演示地址，`source` 是源码地址，均使用完整的 `https://...` URL；留空就不会出现相应按钮。`artwork` 支持 `browser`、`timer`、`notes`、`terminal` 四种 CSS 示意图。计时器等概念卡片仅用于介绍项目，不代表已经实现对应应用。
 
-姓名已配置为 loren；文章、随想及概念项目仍为演示内容。上线前请替换；同时更新 `index.html` 中的初始 `<title>`、description 和首页介绍，让禁用 JavaScript 时的展示也与你的资料一致。
+姓名已配置为 loren；概念项目仍为演示内容。上线前请替换；同时更新 `index.html` 中的初始 `<title>`、description 和首页介绍，让禁用 JavaScript 时的展示也与你的资料一致。
 
 ## 职业经历展示开关
 
@@ -79,6 +80,9 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli install-browser chromi
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests open http://127.0.0.1:4177/ --config=.harness-e2e/cli.config.json
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/career-locked.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(node .harness-e2e/unlocked-fixture.mjs)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/ufo-controls-reach.js)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/writing-pagination.js)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/question-replies.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 ```
 
@@ -89,9 +93,11 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 ## 功能
 
 - 本地化字体体系：书法品牌字、高对比英文衬线体、中文宋体展示字、现代无衬线正文与等宽技术标签。
-- 首页和七个独立栏目：关于、文字、作品、实验、经历、收藏、随想。
-- 个人太阳系导航：水星对应关于、月球对应文字、地球对应作品、火星对应实验、木星对应经历、土星对应收藏、海王星对应随想；金星和天王星作为完整太阳系的背景天体。
-- 文章分类、标题/摘要/正文搜索及阅读窗口。
+- 首页和七个独立栏目：关于、文字（工作、人生、技术、随想四类）、作品、实验、经历、收藏、问题。
+- 个人太阳系导航：水星对应关于、月球对应文字、地球对应作品、火星对应实验、木星对应经历、土星对应收藏、海王星对应问题；金星和天王星作为完整太阳系的背景天体。
+- 文章分类、标题/摘要/正文搜索、分页（每页 6 / 10 / 20 条，默认 10 条；切换分类或搜索时回到第 1 页）及阅读窗口。
+- 实验记录：卡片显示关键指标对比与缩略曲线，详情页含假设、设置、指标、SVG 折线图/条形图、发现与结论；图表随页面主题配色，数据写在 `content.js` 的 `experiments` 中（当前为模拟示意）。每个实验带若干份可下载的 CSV（`data/lab/<实验 id>/`），`content.js` 里的 `datasets` 记录说明、行数、字节数与逐列含义；构建只发布 `datasets` 列出的文件，`scripts/site.test.mjs` 校验表头、行数、字节数和首行与描述一致，改了 CSV 要同步改描述。
+- 问题回复：每个问题点开后有独立回复区，由 giscus（GitHub Discussions）承载，访客登录 GitHub 后回复，按 `question:<问题 id>` 对应讨论帖。回复只以 giscus.app 的跨域 iframe 嵌入（带 sandbox），本站不执行第三方脚本或样式；`index.html` 的 CSP 只放行本站资源与 `frame-src https://giscus.app`，因此页面里不能写内联脚本、事件属性或 style 属性，CSS 变量要用 `element.style.setProperty` 设置。`content.js` 的 `comments.categoryId` 为空时回复区只显示「正在接入中」，不加载任何外部内容。问题 id 一旦发布不要改，否则旧回复会和问题脱钩。
 - 项目筛选、详情及可选的源码/演示链接。
 - 深浅色模式，记住浏览器中的主题选择。
 - 手机导航、键盘操作、Escape 关闭弹窗与减少动效支持。

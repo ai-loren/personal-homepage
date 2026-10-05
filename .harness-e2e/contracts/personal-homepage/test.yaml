@@ -34,16 +34,6 @@ cases:
         action: assertVisible
         target: '.hero-name'
         implements: [typography-system]
-      - id: hero-footnote-primary-visible
-        action: assertText
-        target: '.hero-footnotes .hero-footnote:not(.hero-footnote-alt) [data-profile="note"]'
-        value: 保持好奇，持续创造。
-        implements: [hero-footnote-quotes]
-      - id: hero-footnote-alt-visible
-        action: assertText
-        target: '.hero-footnotes .hero-footnote-alt [data-profile="noteAlt"]'
-        value: Carpe diem · 此心安处是吾乡。
-        implements: [hero-footnote-quotes]
       - id: home-portrait-visible
         action: assertVisible
         target: '.hero-portrait img[src="./assets/loren-portrait.webp"][alt="loren 的个人照片"]'
@@ -464,14 +454,14 @@ cases:
       - id: search-writing
         action: fill
         target: '#writing-search'
-        value: 自留地
+        value: 苏轼
       - id: match-visible
         action: assertVisible
-        target: '.writing-item[href="#writing/a-place-of-my-own"]'
+        target: '.writing-item[href="#writing/neither-wind-nor-sun"]'
         implements: [search-matches]
       - id: open-article
         action: click
-        target: '.writing-item[href="#writing/a-place-of-my-own"]'
+        target: '.writing-item[href="#writing/neither-wind-nor-sun"]'
       - id: article-body-visible
         action: assertVisible
         target: '#reader-body blockquote'
@@ -551,7 +541,11 @@ cases:
       - id: contact-github-guidance
         action: assertText
         target: '#contact-message'
-        value: 暂未公开邮箱，你可以通过 GitHub 了解我的项目与动态。
+        value: 欢迎写信给我，也可以通过 GitHub 了解我的项目与动态。
+        implements: [honest-contact]
+      - id: dialog-email-visible
+        action: assertVisible
+        target: '#contact-details .email-address[href="mailto:1158083128@qq.com"]'
         implements: [honest-contact]
       - id: dialog-github-link-visible
         action: assertVisible

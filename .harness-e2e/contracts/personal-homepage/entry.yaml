@@ -9,7 +9,7 @@ environment:
     height: 900
 cases:
   - id: browse-personal-space
-    description: 访客打开首页，搜索并阅读文章，浏览作品详情和随想。
+    description: 访客打开首页，搜索并阅读文章，浏览作品详情和问题。
     assertions:
       - id: home-ready
         type: visible
@@ -41,9 +41,6 @@ cases:
       - id: home-location-bilingual
         type: visible
         description: 首页 BASE 信息块在中文“中国 上海市”下方显示英文“CHINA · SHANGHAI”，两行层级清晰且不挤压布局。
-      - id: hero-footnote-quotes
-        type: visible
-        description: 首页 hero 底部脚注显示两行格言，第一行为“保持好奇，持续创造。”，第二行为“Carpe diem · 此心安处是吾乡。”。
       - id: typography-system
         type: visible
         description: 首页品牌字、中文展示标题和正文使用明确分层的字体体系。
@@ -76,7 +73,7 @@ cases:
         description: Three.js 太阳系按容器尺寸安全适配，外侧行星与土星环保持在可视舞台内。
       - id: expanded-sections
         type: visible
-        description: 关于、实验、经历、收藏和随想标签均能打开对应内容。
+        description: 关于、实验、经历、收藏和问题标签均能打开对应内容。
       - id: education-profile
         type: visible
         description: 经历页完整显示西安电子科技大学的硕士与本科学历、专业和起止月份，并在两条教育时间轴的左侧分别显示官方校徽。
@@ -103,7 +100,7 @@ cases:
         description: 太阳系包含小行星带、星尘与流星等装饰性元素以丰富画面。
       - id: search-matches
         type: visible
-        description: 搜索自留地后显示匹配文章。
+        description: 搜索「苏轼」后显示匹配文章。
       - id: article-readable
         type: visible
         description: 文章详情显示完整正文，Escape 可以关闭。
@@ -118,13 +115,13 @@ cases:
         description: 项目详情明确展示概念示例说明。
       - id: ideas-readable
         type: visible
-        description: 随想页显示完整的随想内容。
+        description: 问题页显示完整的问题内容。
       - id: theme-switch
         type: visible
         description: 切换主题后出现切回深色模式的按钮。
       - id: honest-contact
         type: visible
-        description: 未公开邮箱时明确说明现状，并引导访客通过 GitHub 了解项目与动态。
+        description: 联系窗口显示可点击、可复制的邮箱，并保留通过 GitHub 了解项目与动态的入口。
       - id: github-profile-link
         type: visible
         description: 页脚联系区域与联系方式弹窗均提供带 GitHub 图标的个人主页链接，地址为 https://github.com/ai-loren，并在新标签页安全打开。

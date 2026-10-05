@@ -1,0 +1,7 @@
+category,eval_samples,teacher_acc_pct,student_before_pct,student_after_pct
+search,260,94.0,71.0,89.0
+file_ops,220,93.0,68.0,87.0
+code_exec,200,88.0,52.0,77.0
+database,180,90.0,58.0,82.0
+http_api,200,89.0,61.0,83.0
+calendar,140,90.7,65.3,84.0

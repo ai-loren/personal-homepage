@@ -110,7 +110,7 @@ async (page) => {
       }
     }
     await page.evaluate(() => { location.hash = 'writing'; });
-    await page.locator('#writing-search').fill('互联网');
+    await page.locator('#writing-search').fill('苏轼');
     assert(await page.locator('.writing-item').count() > 0, 'Writing search regressed');
     await page.locator('.writing-item').first().click();
     assert(await page.locator('#reader-dialog').isVisible(), 'Reader did not open');

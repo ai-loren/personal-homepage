@@ -1,0 +1,4 @@
+strategy,trajectories_k,single_turn_acc_pct,param_error_pct,multi_turn_success_pct
+all,50,78.0,11.9,47.3
+accepted,50,84.0,7.0,55.2
+accepted_dedup,50,84.3,6.8,55.9

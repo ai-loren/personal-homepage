@@ -1,0 +1,7 @@
+step,optimization,mfu_pct,step_time_s,tokens_per_gpu_s,peak_mem_gb
+0,baseline,32.4,4.12,7581,58.2
+1,flash_attention_3,35.8,3.73,8376,55.9
+2,comm_overlap,40.6,3.29,9499,57.1
+3,selective_recompute,43.3,3.08,10131,66.1
+4,fused_kernels,45.1,2.96,10552,65.4
+5,micro_batch_2,46.8,2.85,10950,76.8
