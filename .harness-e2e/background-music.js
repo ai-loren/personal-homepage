@@ -61,10 +61,14 @@ async (page) => {
     assert(Math.abs(now.volume - 0.7) < 0.01 && (await page.locator('#music-volume-value').textContent()) === '70%', `Volume slider should drive audio.volume; got ${now.volume}`);
     results.push('Volume slider controls playback volume: PASS');
 
-    await page.evaluate(() => { const audio = document.querySelector('#background-music'); audio.currentTime = Math.max(0, audio.duration - 0.4); });
+    const seekNearEnd = async () => {
+      await page.waitForFunction(() => Number.isFinite(document.querySelector('#background-music').duration), null, { timeout: 15000 });
+      await page.evaluate(() => { const audio = document.querySelector('#background-music'); audio.currentTime = Math.max(0, audio.duration - 0.4); });
+    };
+    await seekNearEnd();
     await page.waitForFunction(() => document.querySelector('#background-music').getAttribute('src').includes('no-time-for-caution'), null, { timeout: 10000 });
     await page.waitForFunction(() => !document.querySelector('#background-music').paused, null, { timeout: 10000 });
-    await page.evaluate(() => { const audio = document.querySelector('#background-music'); audio.currentTime = Math.max(0, audio.duration - 0.4); });
+    await seekNearEnd();
     await page.waitForFunction(() => document.querySelector('#background-music').getAttribute('src').includes('cornfield-chase'), null, { timeout: 10000 });
     results.push('Playlist advances to No Time for Caution and loops back: PASS');
 
