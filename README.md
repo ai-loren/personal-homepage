@@ -2,6 +2,27 @@
 
 一个深色星空风格的个人主页，使用 HTML、CSS 和原生 JavaScript。通过无第三方依赖的 Node.js 构建步骤裁剪公开履历，产物仍是纯静态文件，上线不需要运行时后端。
 
+在线效果：[ai-loren.github.io/personal-homepage](https://ai-loren.github.io/personal-homepage/)。这个仓库也是一个模板，可以直接拿来做你自己的主页，步骤见下一节。
+
+## 用这个模板做你自己的主页
+
+1. **新建仓库**：在 GitHub 上点「Use this template」建一个自己的仓库，再带着子模块克隆：`git clone --recurse-submodules <你的仓库地址>`。
+2. **换成你的内容**：`cp content.example.js content.js`，再按下面「换成自己的内容」一节的字段表逐项改。`content.example.js` 留着，通用测试拿它当固定样本。`index.html` 不用改，名字、介绍、职位等会在构建时按 `content.js` 填好。
+3. **改履历展示开关**：把 `site.config.mjs` 里的 `CAREER_VISIBILITY` 改成 `'all'`，或者改成你某一家公司在 `content.js` 里的 `id`。
+4. **删掉原作者的个人素材和专属测试**：
+   - `scripts/content.test.mjs`：只核对原作者那份内容
+   - `.harness-e2e/` 下的浏览器测试：按原作者的内容写的，可以删掉或照着改
+   - `assets/loren-portrait.webp`、`assets/xidian-university-emblem.png`、各公司 logo、`assets/projects/`、`data/lab/`
+   - `audio/`：有版权的音乐，一定要删
+   - 用不到的小工具：从 `scripts/site.mjs` 的 `PUBLIC_FILES` 和 `index.html` 里去掉对应脚本；子模块用 `git rm tools/<id>` 移除
+5. **问题页的回复区**：
+   - 想开回复：给仓库打开 Discussions、安装 [giscus](https://giscus.app/) 应用，把 giscus 页面给出的 `repoId`、`categoryId` 填进 `content.js` 的 `comments`，再把你网站的地址写进 `giscus.json` 的 `origins`。
+   - 暂时不开：`categoryId` 留空即可，问题页会显示「正在接入中」。但 `comments.site` 要改成你自己的网址，并和 `giscus.json` 保持一致，测试会检查。
+6. **本地验证**：`node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs'`，再 `node scripts/site.mjs serve` 打开预览看一遍。
+7. **部署**：仓库 **Settings → Pages → Source** 选 **GitHub Actions**。之后每次推到 `main`，工作流会先测试、再构建，只发布 `dist/`。网址是 `https://<用户名>.github.io/<仓库名>/`。
+
+页脚的「Built with Loren's Galaxy」链接欢迎保留；觉得有用，给 [原仓库](https://github.com/ai-loren/personal-homepage) 点个 star。代码是 MIT 许可，原作者的个人内容、商标和音乐不在其内，见 [CONTENT-LICENSE.md](CONTENT-LICENSE.md)。
+
 ## 本地启动
 
 需要 Node.js 20+ 和现代浏览器，不需要 `npm install`。预览入口会先裁剪公开数据，再仅服务允许发布的文件；**不要再从源码根目录运行 `python3 -m http.server`**，否则完整履历、测试文件和 Git 元数据可能被直接读取。
@@ -13,7 +34,7 @@ cd /Users/loren/Documents/loren/personal-homepage
 node scripts/site.mjs serve
 ```
 
-看到 `Preview: http://127.0.0.1:4177/` 后打开该地址。当前页面固定显示 Tencent，控件不可展开，浏览器收到的数据也只有 Tencent。
+看到 `Preview: http://127.0.0.1:4177/` 后打开该地址。页面上显示哪些公司的履历，由 `site.config.mjs` 的 `CAREER_VISIBILITY` 决定，浏览器收到的数据也只有这些公司的。本仓库当前只发布 Tencent，控件不可展开。
 
 - **停止服务**：在运行服务的终端按 `Ctrl+C`。
 - **更新页面**：修改源码或 `site.config.mjs` 后，停止并重新执行启动命令，再刷新浏览器。服务只使用启动时生成的公开快照，没有自动热更新。
@@ -36,7 +57,12 @@ node scripts/site.mjs serve
 | `profile.now` / `nowNote` | 首页「此刻」内容 |
 | `profile.email` | 联系邮箱；留空时显示未提供联系方式 |
 | `profile.github` | 完整 GitHub 主页地址；留空时隐藏入口 |
+| `profile.focus` | 首页「能力与经验」列表；留空时整块不显示 |
+| `profile.location` / `locationEn` | 首页所在地区（中文 / 英文） |
+| `profile.portrait` | 首页头像 `{ src: './assets/<文件名>', alt }`；不填就不显示头像 |
 | `profile.demo` | 为 `true` 时实验页底部显示「当前实验数据为模拟示意」；实验换成真实数据后改为 `false` |
+| `experience` | 工作经历，每家公司一项：`id`（小写字母、数字或连字符，用作展示开关的取值）、`company`、`modeName`（切换菜单上的名字）、`privateMarkers`（不发布这家公司时，任何公开文件里都不许出现的词，比如英文名、内部项目代号）、`profileRole`、`logo`、`roles`。`modeName` 和 `privateMarkers` 只给构建用，不会发布 |
+| `journey` | 教育经历；每项可带 `emblem: { src, alt }` 校徽，首页显示第一项的校徽 |
 | `articles` | 文章，按展示顺序排列；第一篇显示在首页 |
 | `projectFacets` | 作品筛选的维度与可选值（类型、使用、代码），作品只能用这里声明的值 |
 | `projects` | 项目介绍、筛选维度取值、技术标签及外部链接 |
@@ -48,21 +74,22 @@ node scripts/site.mjs serve
 
 项目的 `url` 是演示地址，`source` 是源码地址，均使用完整的 `https://...` URL；留空就不会出现相应按钮。`artwork` 支持 `browser`、`timer`、`notes`、`terminal`、`ledger`、`checkpoint`、`trace` 七种 CSS 示意图。
 
-姓名已配置为 loren。改资料时同时更新 `index.html` 中的初始 `<title>`、description 和首页介绍，让禁用 JavaScript 时的展示也与你的资料一致。
+`index.html` 不需要手改：标题、描述、名字、介绍、职位、地区、能力列表、头像、学历和「此刻」都写成 `{{name}}` 这样的占位符，头像、学历、校徽这类可选内容包在 `<!-- if:portrait -->…<!-- end:portrait -->` 里，构建时按 `content.js` 填好或整块去掉。这样禁用 JavaScript 的访客和搜索引擎看到的首屏，与页面加载后渲染的是同一份资料。
 
 ## 职业经历展示开关
 
-唯一开关是 `site.config.mjs` 中的 `CAREER_VISIBILITY`，当前固定为 `'tencent'`。它只在构建/启动预览时读取，不会发给浏览器，也不接受 URL、存储或 HTTP 参数覆盖。
+唯一开关是 `site.config.mjs` 中的 `CAREER_VISIBILITY`。它只在构建/启动预览时读取，不会发给浏览器，也不接受 URL、存储或 HTTP 参数覆盖。
 
 | 开关值 | 生成的公开内容与控件 |
 | --- | --- |
-| `tencent`（当前） | 仅包含 Tencent 履历及图片，右上角固定 Tencent，不可展开 |
-| `bytedance` | 仅包含 ByteDance 履历及图片，控件固定 ByteDance |
-| `all` | 包含两家公司，恢复“全部履历 / ByteDance / Tencent”三模式菜单 |
+| 某家公司的 `id` | 只包含这家公司的履历及图片，右上角固定显示它的 `modeName`，不可展开 |
+| `all` | 包含 `experience` 里的全部公司，显示「全部履历」加各公司名的切换菜单 |
 
-**暂不开放 `all` 和 `bytedance`。**相关源数据、图片、筛选逻辑和交互测试完整保留，后续确认开放时只需修改开关，再重新构建并部署。`all` 模式下的菜单选择仅在本次页面生命周期内有效，不写入存储，刷新回到构建默认值。
+公司名单和菜单上的名字都来自 `content.js`，代码里不写死任何公司。填了 `content.js` 里没有的 `id` 会直接报错，并列出可用的值。
 
-完整数据仍在源码 `content.js` 的 `experience` 中维护。首页与关于的职位由公司 `profileRole` 派生；教育和其他栏目不受影响。构建会生成裁剪后的 `dist/content.js`，未开放公司的数据和 Logo 不进入 `dist/`；其他公开文件若残留该公司的职位、介绍等引用，构建会报错而不是继续发布。非法开关同样直接报错，不回退为全部公开。
+**本仓库的情况**：当前开关是 `'tencent'`，暂不开放 `all` 和 `bytedance`。相关源数据、图片、筛选逻辑和交互测试完整保留，后续确认开放时只需修改开关，再重新构建并部署。`all` 模式下的菜单选择仅在本次页面生命周期内有效，不写入存储，刷新回到构建默认值。
+
+完整数据仍在源码 `content.js` 的 `experience` 中维护。首页与关于的职位由公司 `profileRole` 派生；教育和其他栏目不受影响。构建会生成裁剪后的 `dist/content.js`，未开放公司的数据和 Logo 不进入 `dist/`；其他公开文件若残留该公司的名字、职位、`privateMarkers` 里的词或整句工作亮点，构建会报错而不是继续发布。非法开关同样直接报错，不回退为全部公开。
 
 展示范围不改变实际任职状态：Tencent 及 Hunyuan 岗位时间为 2026.09 — 至今，ByteDance 及 Seed 岗位均于 2026.09 结束。尚未提供的 Tencent 职责和技能留空，不推算或编造；缺少日期时不显示时长。补充日期使用 `YYYY-MM` 格式，当前岗位由 `current: true` 标识。公司结束月份仅在所有历史岗位结束月份已知时计算，避免把 Ads 结束日期误当成 ByteDance 离职日期。Tencent/Hunyuan 使用 `assets/tencent-logo.png` 和 `assets/tencent-hunyuan-logo.png`，通过 `logo` 和 `logoAlt` 配置；两张透明 PNG 分别来自[腾讯官方媒体库](https://www.tencent.com/en-us/media/library.html)和[混元官方仓库](https://github.com/Tencent/Tencent-Hunyuan-Large)，与选定的参考图版本一致，页面不依赖外链图片。
 
@@ -70,9 +97,15 @@ node scripts/site.mjs serve
 
 **网站只部署 `dist/`，但源码仓库目前按维护者决定保持公开。**完整履历仍可通过 GitHub 源码与历史查看；网站的数据裁剪只控制 Pages 站点展示和下载内容，不代表源码保密。如果以后需要真正限制完整履历的获取，需另行将源仓库私有化并处理旧发布、历史和缓存。
 
-### 职业展示回归验证（可选）
+### 测试
 
-先运行 `node --test scripts/site.test.mjs scripts/vram-ledger.test.mjs tools/ckpt-goodput/test/ckpt-goodput.test.mjs tools/agent-trace-replay/test/agent-trace-replay.test.mjs`，第一个检查数据裁剪、完整源数据保留、旧产物清理、路径遍历和私有文件拒绝访问，其余是三个小工具各自的测试。Node 测试不需要安装额外依赖。
+运行 `node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs'`，不需要安装额外依赖：
+
+- `scripts/site.test.mjs`：通用的发布与安全检查，比如只发布选中的公司、其他公司的信息漏进公开文件就报错、首页占位符转义、路径遍历、私有文件拒绝访问、严格的 CSP。它不依赖某一个人的内容，用 `content.example.js` 当固定样本，换了内容也应该通过。
+- `scripts/content.test.mjs`：只核对本仓库这份内容，比如锁定 Tencent、字节跳动的信息不外泄、三个小工具。用这个仓库做模板时删掉。
+- `scripts/vram-ledger.test.mjs` 和 `tools/*/test/`：三个小工具各自的公式测试。
+
+浏览器回归测试是按本仓库的内容写的。
 
 浏览器回归使用固定版本 Playwright CLI。保持安全预览服务运行，再在项目根目录执行：
 
@@ -140,3 +173,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 本站仍使用 hash 路由，不需要服务端重写规则，也可放在子目录中。上述托管设置需在平台上实际应用；修改本地代码不会自动调整已有线上部署。
 
 当前实现适合个人展示与本地文件维护。如果之后需要留言、订阅、跨设备在线编辑，需另接相应服务。每篇文章的独立搜索引擎收录与分享预览，可以在后续通过静态站点生成器实现。
+
+## 许可证
+
+代码采用 [MIT](LICENSE) 许可。`content.js` 里的个人内容、照片、作品截图、实验数据，各公司与学校的商标，以及背景音乐都不在 MIT 范围内；字体、three.js 和三个小工具保留各自的许可。详见 [CONTENT-LICENSE.md](CONTENT-LICENSE.md)。

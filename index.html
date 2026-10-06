@@ -5,17 +5,17 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; frame-src https://giscus.app; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0c1014">
-    <meta name="description" content="一个关于创造、技术与日常思考的个人空间。">
-    <title>Loren's Galaxy</title>
-    <link rel="icon" type="image/png" sizes="128x128" href="./assets/lorens-saturn-favicon.png?v=20260921-1">
+    <meta name="description" content="{{description}}">
+    <title>{{siteTitle}}</title>
+    <link rel="icon" type="image/png" sizes="128x128" href="./assets/saturn-favicon.png?v=20260921-1">
     <link rel="preload" href="./vendor/fonts/noto-serif-sc-subset.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="./styles.css?v=20261007-trace">
+    <link rel="stylesheet" href="./styles.css?v=20261007-template">
     <script src="./vendor/three.min.js" defer></script>
-    <script src="./content.js?v=20261007-ps" defer></script>
+    <script src="./content.js?v=20261007-template" defer></script>
     <script src="./tools/vram-ledger.js?v=20261007-ledger3" defer></script>
     <script src="./tools/ckpt-goodput/ckpt-goodput.js?v=20261007-ckpt3" defer></script>
     <script src="./tools/agent-trace-replay/agent-trace-replay.js?v=20261007-trace" defer></script>
-    <script src="./app.js?v=20261007-trace" defer></script>
+    <script src="./app.js?v=20261007-template" defer></script>
     <script src="./globe-renderer.js" defer></script>
     <script src="./cosmos.js?v=20260922-17" defer></script>
     <script src="./solar-system-3d.js?v=20261005-title" defer></script>
@@ -26,7 +26,7 @@
     <div class="sky" aria-hidden="true"><canvas id="starfield"></canvas><canvas id="page-art"></canvas></div>
     <div class="site-shell">
       <header class="site-header">
-        <a class="wordmark" href="#home" aria-label="返回首页" data-site-name>loren<span>.</span></a>
+        <a class="wordmark" href="#home" aria-label="返回首页" data-site-name>{{name}}<span>.</span></a>
         <nav class="desktop-nav" aria-label="主导航">
           <a href="#home" data-nav="home"><span class="celestial-icon celestial-icon-sun" data-motion="static" aria-hidden="true"></span>首页</a>
           <a href="#about" data-nav="about"><span class="celestial-icon" data-celestial-icon="mercury" aria-hidden="true"></span>关于 <span class="nav-en">About</span></a>
@@ -105,50 +105,45 @@
             <div class="hero-copy">
               <p class="terminal-command" aria-hidden="true"><span>~</span> / whoami <span class="terminal-cursor"></span></p>
               <div class="hero-identity">
-                <figure class="hero-portrait">
-                  <img src="./assets/loren-portrait.webp" width="720" height="960" alt="loren 的个人照片">
-                </figure>
-                <h1 id="home-title">你好，我是<br><span class="hero-name" data-profile="name">loren</span><span class="hero-period">.</span></h1>
+                <!-- if:portrait --><figure class="hero-portrait">
+                  <img src="{{portraitSrc}}" width="720" height="960" alt="{{portraitAlt}}">
+                </figure><!-- end:portrait -->
+                <h1 id="home-title">你好，我是<br><span class="hero-name" data-profile="name">{{name}}</span><span class="hero-period">.</span></h1>
               </div>
-              <p class="hero-intro">写代码，做产品，记录有意思的想法，<span class="hero-motto">Carpe Diem</span></p>
+              <p class="hero-intro">{{intro}}</p>
               <dl class="hero-profile-meta" aria-label="职业经历与所在地区">
                 <div>
                   <dt>ROLE / 职业经历</dt>
-                  <dd data-profile="role">AI Infra Engineer</dd>
+                  <dd data-profile="role">{{role}}</dd>
                 </div>
                 <div>
                   <dt>BASE / 所在地区</dt>
                   <dd class="hero-profile-location">
-                    <span data-profile="location">中国 上海市</span>
-                    <small data-profile="locationEn">CHINA · SHANGHAI</small>
+                    <span data-profile="location">{{location}}</span>
+                    <small data-profile="locationEn">{{locationEn}}</small>
                   </dd>
                 </div>
               </dl>
-              <p class="hero-focus-label" id="hero-focus-title">EXPERTISE / 能力与经验</p>
-              <ul class="hero-focus" id="hero-focus" aria-labelledby="hero-focus-title">
-                <li>ML Infra 平台：全栈研发</li>
-                <li>Agentic ML Infra：ML平台 Agent、Skill 与 CLI</li>
-                <li>Agent 运行时：ADK 与 Harness</li>
-                <li>Multi-Agent 框架：Long-Horizon 任务</li>
-              </ul>
-              <a class="hero-education" href="#journey" aria-label="查看教育经历">
-                <span class="hero-education-emblem">
-                  <img src="./assets/xidian-university-emblem.png" width="267" height="267" alt="西安电子科技大学校徽">
-                </span>
+              <!-- if:focus --><p class="hero-focus-label" id="hero-focus-title">EXPERTISE / 能力与经验</p>
+              <ul class="hero-focus" id="hero-focus" aria-labelledby="hero-focus-title">{{focus}}</ul><!-- end:focus -->
+              <!-- if:education --><a class="hero-education" href="#journey" aria-label="查看教育经历">
+                <!-- if:emblem --><span class="hero-education-emblem">
+                  <img src="{{emblemSrc}}" width="267" height="267" alt="{{emblemAlt}}">
+                </span><!-- end:emblem -->
                 <span class="hero-education-copy">
                   <span class="hero-education-label">EDUCATION / 教育坐标</span>
-                  <strong class="hero-education-school">西安电子科技大学</strong>
-                  <span class="hero-education-meta">硕士 · 计算机技术 <i>／</i> 本科 · 软件工程</span>
+                  <strong class="hero-education-school">{{school}}</strong>
+                  <span class="hero-education-meta">{{educationMeta}}</span>
                 </span>
                 <span class="hero-education-arrow" aria-hidden="true">↗</span>
-              </a>
+              </a><!-- end:education -->
               <div class="hero-actions">
                 <a class="button button-primary" href="#projects">看看我的作品 <span aria-hidden="true">↗</span></a>
                 <a class="text-link" href="#contact">来打个招呼 <span aria-hidden="true">↗</span></a>
               </div>
             </div>
-            <div class="universe" aria-label="探索 loren 的个人太阳系">
-              <div class="universe-coordinate coordinate-top" aria-hidden="true"><span class="coordinate-building">Continuously Building</span><span class="coordinate-name">LOREN'S SOLAR SYSTEM</span></div>
+            <div class="universe" aria-label="探索 {{name}} 的个人太阳系">
+              <div class="universe-coordinate coordinate-top" aria-hidden="true"><span class="coordinate-building">Continuously Building</span><span class="coordinate-name">{{solarName}}</span></div>
               <div class="universe-coordinate coordinate-bottom" aria-hidden="true">RELATIVE DIAMETERS · COMPRESSED</div>
               <div class="orbit orbit-one" aria-hidden="true"></div>
               <div class="orbit orbit-two" aria-hidden="true"></div>
@@ -202,12 +197,12 @@
           <div class="home-bottom">
             <section class="currently-block" aria-labelledby="currently-title">
               <h2 class="section-kicker" id="currently-title"><span class="status-dot"></span>此刻 / NOW</h2>
-              <p data-profile="now">Building Hunyuan's Agentic ML Infra, where agents run the ML stack.</p>
-              <span class="muted-note" data-profile="nowNote">让 Agent 成为 ML 平台的一等用户。</span>
+              <p data-profile="now">{{now}}</p>
+              <span class="muted-note" data-profile="nowNote">{{nowNote}}</span>
             </section>
             <section class="latest-block" aria-labelledby="latest-title">
               <div class="section-heading"><h2 class="section-kicker" id="latest-title"><span class="status-dot is-static"></span>最近写下 / LATEST NOTE</h2><a class="subtle-link" href="#writing">全部文字 ↗</a></div>
-              <a class="latest-note" id="latest-note" href="#writing"><span class="latest-note-title">工程为效率负责，算法为效果负责</span><span class="latest-note-arrow" aria-hidden="true">↗</span></a>
+              <a class="latest-note" id="latest-note" href="#writing"><span class="latest-note-title">{{latestTitle}}</span><span class="latest-note-arrow" aria-hidden="true">↗</span></a>
               <span class="muted-note" id="latest-note-meta">关于创造，也关于记录。</span>
             </section>
           </div>
@@ -286,7 +281,7 @@
       <footer class="site-footer" id="contact">
         <div class="contact-copy"><h2>很高兴在这里遇见你<span>.</span></h2><p>关于技术、想法，或者只是打个招呼。</p></div>
         <div class="contact-actions" id="contact-actions"></div>
-        <div class="footer-bottom"><span>© <span id="year"></span> <span class="footer-name" data-profile="name">loren</span></span><span>用好奇心建造 <span class="footer-star" aria-hidden="true">✳</span> 持续生长中</span><a href="#home">回到首页 ↑</a></div>
+        <div class="footer-bottom"><span>© <span id="year"></span> <span class="footer-name" data-profile="name">{{name}}</span></span><span>用好奇心建造 <span class="footer-star" aria-hidden="true">✳</span> 持续生长中</span><a class="footer-credit" href="https://github.com/ai-loren/personal-homepage" target="_blank" rel="noopener noreferrer">Built with Loren's Galaxy ↗</a><a href="#home">回到首页 ↑</a></div>
       </footer>
     </div>
 

@@ -18,6 +18,7 @@ window.SITE_CONTENT = {
     nowNote: '让 Agent 成为 ML 平台的一等用户。',
     email: '1158083128@qq.com',
     github: 'https://github.com/ai-loren',
+    portrait: { src: './assets/loren-portrait.webp', alt: 'loren 的个人照片' },
     demo: true,
   },
   about: {
@@ -790,6 +791,8 @@ window.SITE_CONTENT = {
     {
       id: 'tencent',
       company: '腾讯',
+      modeName: 'Tencent',
+      privateMarkers: ['Tencent', '腾讯', 'Tencent Hunyuan'],
       profileRole: 'Tencent Hunyuan AI Infra Engineer',
       logo: './assets/tencent-logo.png',
       logoAlt: 'Tencent',
@@ -799,7 +802,7 @@ window.SITE_CONTENT = {
           title: 'Hunyuan AI Infra Engineer',
           logo: './assets/tencent-hunyuan-logo.png',
           logoAlt: 'Tencent Hunyuan',
-          logoKind: 'hunyuan',
+          logoKind: 'wide',
           start: '2026-09',
           current: true,
           highlights: [],
@@ -810,6 +813,8 @@ window.SITE_CONTENT = {
     {
       id: 'bytedance',
       company: '字节跳动',
+      modeName: 'ByteDance',
+      privateMarkers: ['ByteDance', '字节跳动', '巨量引擎', 'Ocean Engine', 'ipgen.ohayoo.cn'],
       profileRole: 'Bytedance Seed AI Infra Engineer',
       logo: './assets/bytedance-logo.png',
       logoAlt: 'ByteDance',
@@ -853,12 +858,14 @@ window.SITE_CONTENT = {
     {
       period: '2023.09 — 2025.06',
       title: '西安电子科技大学',
+      emblem: { src: './assets/xidian-university-emblem.png', alt: '西安电子科技大学校徽' },
       degree: '硕士',
       major: '计算机技术',
     },
     {
       period: '2019.09 — 2023.06',
       title: '西安电子科技大学',
+      emblem: { src: './assets/xidian-university-emblem.png', alt: '西安电子科技大学校徽' },
       degree: '本科',
       major: '软件工程',
     },

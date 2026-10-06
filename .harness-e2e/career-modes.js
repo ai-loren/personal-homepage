@@ -48,9 +48,12 @@ async (page, fixture) => {
     }
     const careerHTML = await page.locator('#work-experience-list').innerHTML();
     assert(!/undefined|NaN|src=""/.test(careerHTML), `${label}: missing data leaked into markup`);
+    // 菜单只筛职业经历；「此刻」等资料对所有模式相同，单公司发布时由构建的防泄漏检查负责。
+    const careerContent = await page.evaluate(() => ['#work-experience-list', '[data-profile="role"]', '[data-profile-field="role"]']
+      .flatMap((selector) => [...document.querySelectorAll(selector)].map((node) => node.innerHTML)).join('\n'));
     for (const id of Object.keys(roles).filter((id) => !ids.includes(id))) {
       const forbidden = id === 'tencent' ? /Tencent|Hunyuan|腾讯/i : /ByteDance|字节跳动|Seed AI|Ads Infra|ocean-engine/i;
-      assert(!forbidden.test(await page.locator('#main').innerHTML()), `${label}: hidden company exists in career content`);
+      assert(!forbidden.test(careerContent), `${label}: hidden company exists in career content`);
     }
     assert(await page.locator('.journey-item-education').count() === 2, `${label}: education changed`);
     assert(!await page.locator('.hero-profile-meta').innerText().then((text) => text.includes('当前职位')), `${label}: historical roles labeled current`);
@@ -136,7 +139,8 @@ async (page, fixture) => {
     await loadMode('bytedance');
     const storedBefore = await page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()));
     for (const mode of ['tencent', 'all', 'bytedance']) await selectMode(mode);
-    await page.locator('.theme-toggle').focus();
+    const musicShown = await page.locator('#music-control').isVisible();
+    await page.locator(musicShown ? '#music-toggle' : '.theme-toggle').focus();
     await page.keyboard.press('Tab');
     assert(await toggle.evaluate((node) => document.activeElement === node), 'Trigger is not reachable by Tab');
     await page.keyboard.press('Space');
@@ -166,7 +170,7 @@ async (page, fixture) => {
     await toggle.click();
     await page.keyboard.press('Shift+Tab');
     await checkClosed('shift-tab');
-    assert(await page.locator('.theme-toggle').evaluate((node) => document.activeElement === node), 'Shift+Tab did not move to previous control');
+    assert(await page.locator(musicShown ? '#music-toggle' : '.theme-toggle').evaluate((node) => document.activeElement === node), 'Shift+Tab did not move to previous control');
     await toggle.click();
     await page.locator('.wordmark').click();
     await checkClosed('outside-click');
@@ -274,7 +278,15 @@ async (page, fixture) => {
     try {
       const fallback = await noJS.newPage();
       await fallback.goto(origin);
-      assert(!/Tencent|Hunyuan|ByteDance|字节跳动|腾讯/i.test(await fallback.locator('body').innerText()), 'No-JS fallback reveals company');
+      const text = await fallback.locator('body').innerText();
+      // 首屏由构建按公开内容填写：已发布公司的职位应当出现，未发布公司一个字都不能出现。
+      const served = (await (await fallback.request.get(`${origin}/content.js`)).text()).match(/^window\.SITE_CONTENT = (\{[\s\S]+\});\s*$/);
+      const publishedIds = JSON.parse(served[1]).experience.map((company) => company.id);
+      const hidden = { tencent: /Tencent|Hunyuan|腾讯/i, bytedance: /ByteDance|字节跳动|Seed AI|Ads Infra/i };
+      for (const [id, pattern] of Object.entries(hidden)) {
+        if (!publishedIds.includes(id)) assert(!pattern.test(text), `No-JS fallback reveals unpublished company ${id}`);
+      }
+      assert(publishedIds.length > 0 && publishedIds.every((id) => text.includes(roles[id])), `No-JS fallback must show the published role: ${publishedIds.join(', ')}`);
     } finally {
       await noJS.close();
     }

@@ -840,10 +840,7 @@
         aria-label="${escapeHTML(`${entry.title}，${entry.degree}，${entry.major}，${entry.period}`)}">
         <div class="journey-aside">
           <div class="journey-period">${escapeHTML(entry.period)}</div>
-          <span class="journey-emblem">
-            <img src="./assets/xidian-university-emblem.png" width="267" height="267"
-              alt="西安电子科技大学校徽">
-          </span>
+          ${entry.emblem ? `<span class="journey-emblem"><img src="${escapeHTML(entry.emblem.src)}" width="267" height="267" alt="${escapeHTML(entry.emblem.alt)}"></span>` : ''}
         </div>
         <div>
           <div class="journey-kicker"><span>ACADEMIC ORBIT</span><span class="journey-degree">${escapeHTML(entry.degree)}</span></div>
@@ -1073,7 +1070,7 @@
 
   const githubURL = safeURL(profile.github);
   const githubLink = githubURL
-    ? `<a class="contact-button github-link" href="${escapeHTML(githubURL)}" target="_blank" rel="noopener noreferrer" aria-label="访问 Loren 的 GitHub 主页">${icons.github} GitHub ↗</a>`
+    ? `<a class="contact-button github-link" href="${escapeHTML(githubURL)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(`访问 ${profile.name} 的 GitHub 主页`)}">${icons.github} GitHub ↗</a>`
     : '';
   $('#contact-actions').innerHTML = `${githubLink}
     <button class="contact-button contact-primary" id="contact-open" type="button">${icons.mail} 联系我 <span aria-hidden="true">↗</span></button>`;

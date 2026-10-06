@@ -6,20 +6,16 @@ import { runInNewContext } from 'node:vm';
 import { CAREER_VISIBILITY } from '../site.config.mjs';
 
 export const PROJECT_ROOT = fileURLToPath(new URL('../', import.meta.url));
-const MODE_NAMES = Object.freeze({ all: '全部履历', bytedance: 'ByteDance', tencent: 'Tencent' });
-const PRIVATE_MARKERS = {
-  bytedance: ['ByteDance', '字节跳动', '巨量引擎', 'Ocean Engine', 'ipgen.ohayoo.cn'],
-  tencent: ['Tencent', '腾讯', 'Tencent Hunyuan'],
-};
+const ALL_CAREERS_LABEL = '全部履历';
 const OUTPUT_MARKER = 'personal-homepage public output v1\n';
+const ASSET_PATH = /^\.\/assets\/[a-zA-Z0-9_-]+\.(png|webp|jpe?g|svg)$/;
 const PUBLIC_FILES = [
   'index.html', 'styles.css', 'app.js', 'cosmos.js', 'globe-renderer.js',
   'solar-system-3d.js', 'page-scenes.js', 'tools/vram-ledger.js', 'tools/ckpt-goodput/ckpt-goodput.js', 'tools/agent-trace-replay/agent-trace-replay.js', '.nojekyll',
-  'assets/lorens-saturn-favicon.png', 'assets/loren-portrait.webp',
-  'assets/xidian-university-emblem.png',
+  'assets/saturn-favicon.png',
   'vendor/three.min.js', 'vendor/THREE-LICENSE.txt',
   'vendor/fonts/cormorant-garamond.ttf', 'vendor/fonts/ibm-plex-mono.ttf',
-  'vendor/fonts/ibm-plex-mono-semibold.ttf', 'vendor/fonts/IBM-PLEX-OFL.txt',
+  'vendor/fonts/ibm-plex-mono-semibold.ttf', 'vendor/fonts/IBM-PLEX-OFL.txt', 'vendor/fonts/OFL.txt',
   'vendor/fonts/manrope.ttf', 'vendor/fonts/noto-serif-sc-subset.woff2',
   'vendor/fonts/pinyon-script.ttf',
 ];
@@ -44,35 +40,39 @@ async function readSourceFile(root, name) {
   return readFile(path);
 }
 
-export async function readSourceContent(root = PROJECT_ROOT) {
-  const source = await readSourceFile(root, 'content.js');
+export async function readSourceContent(root = PROJECT_ROOT, name = 'content.js') {
+  const source = await readSourceFile(root, name);
   const context = { window: {} };
-  runInNewContext(source.toString('utf8'), context, { filename: 'content.js', timeout: 1000 });
+  runInNewContext(source.toString('utf8'), context, { filename: name, timeout: 1000 });
   return JSON.parse(JSON.stringify(context.window.SITE_CONTENT));
 }
 
+// 公司名单、菜单上的名字（modeName）和额外的防泄漏词（privateMarkers）都来自 content.js；后两者只供构建使用，不随公开内容发布。
 export function selectPublicContent(source, visibility = CAREER_VISIBILITY) {
-  if (!Object.hasOwn(MODE_NAMES, visibility)) {
-    throw new Error(`CAREER_VISIBILITY expects tencent, bytedance or all; got ${JSON.stringify(visibility)}. Fix site.config.mjs before publishing.`);
+  const companies = source.experience || [];
+  const ids = companies.map((company) => company.id);
+  if (!ids.length || new Set(ids).size !== ids.length || ids.some((id) => typeof id !== 'string' || !/^[a-z0-9-]+$/.test(id) || id === 'all')) {
+    throw new Error(`content.js expects experience to list at least one company, each with a unique id of lowercase letters, digits or hyphens ("all" is reserved); got ${JSON.stringify(ids)}. Fix the ids before publishing.`);
   }
+  if (visibility !== 'all' && !ids.includes(visibility)) {
+    throw new Error(`CAREER_VISIBILITY expects "all" or one of ${ids.map((id) => JSON.stringify(id)).join(', ')} (the company ids in content.js experience); got ${JSON.stringify(visibility)}. Fix site.config.mjs before publishing.`);
+  }
+  const names = Object.fromEntries(companies.map((company) => [company.id, company.modeName || company.company]));
   const content = structuredClone(source);
-  const ids = content.experience?.map((company) => company.id);
-  if (!ids?.length || new Set(ids).size !== ids.length || ids.some((id) => !['tencent', 'bytedance'].includes(id))) {
-    throw new Error('content.js expects unique tencent/bytedance company IDs in experience. Correct the source data before publishing.');
-  }
-  content.experience = content.experience.filter((company) => visibility === 'all' || company.id === visibility);
-  if (!content.experience.length) {
-    throw new Error(`No experience matches ${visibility}. Add that company to content.js or change CAREER_VISIBILITY.`);
-  }
+  content.experience = content.experience
+    .filter((company) => visibility === 'all' || company.id === visibility)
+    .map(({ modeName, privateMarkers, ...company }) => company);
   content.careerMode = visibility;
-  content.careerModes = visibility === 'all' ? { ...MODE_NAMES } : { [visibility]: MODE_NAMES[visibility] };
+  content.careerModes = visibility === 'all'
+    ? { all: ALL_CAREERS_LABEL, ...Object.fromEntries([...ids].sort().map((id) => [id, names[id]])) }
+    : { [visibility]: names[visibility] };
   return content;
 }
 
 function assertNoPrivateCareer(files, source, publicContent) {
   const published = new Set(publicContent.experience.map((company) => company.id));
   const markers = source.experience.filter((company) => !published.has(company.id)).flatMap((company) => [
-    ...(PRIVATE_MARKERS[company.id] || []),
+    ...(company.privateMarkers || []),
     company.company, company.profileRole, company.logo, company.logoAlt,
     ...company.roles.flatMap((role) => [
       role.title, role.logo, role.logoAlt,
@@ -125,11 +125,19 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
   for (const company of content.experience) {
     for (const entry of [company, ...company.roles]) {
       if (!entry.logo) continue;
-      if (!/^\.\/assets\/[a-zA-Z0-9_-]+\.(png|webp|jpe?g|svg)$/.test(entry.logo)) {
+      if (!ASSET_PATH.test(entry.logo)) {
         throw new Error(`Logo expects ./assets/<filename>.(png|webp|jpg|jpeg|svg); got ${entry.logo}. Store the image locally without path traversal or query parameters.`);
       }
       paths.add(entry.logo.slice(2));
     }
+  }
+  const ownImages = [['profile.portrait', content.profile?.portrait], ...(content.journey || []).map((entry, index) => [`journey[${index}].emblem`, entry.emblem])];
+  for (const [field, image] of ownImages) {
+    if (!image) continue;
+    if (!ASSET_PATH.test(image.src || '') || typeof image.alt !== 'string') {
+      throw new Error(`content.js ${field} expects { src: './assets/<filename>.(png|webp|jpg|jpeg|svg)', alt: '…' }; got ${JSON.stringify(image)}. Store the image under assets/ and describe it in alt, or remove the field.`);
+    }
+    paths.add(image.src.slice(2));
   }
   const toolIds = PUBLIC_FILES.filter((name) => name.startsWith('tools/')).map((name) => name.split('/').pop().slice(0, -3));
   for (const project of content.projects || []) {
@@ -186,8 +194,58 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
   })));
   for (const [track, bytes] of tracks) files.set(track.file.slice(2), bytes);
   files.set('content.js', Buffer.from(`window.SITE_CONTENT = ${JSON.stringify(content, null, 2)};\n`));
+  files.set('index.html', Buffer.from(renderIndex(files.get('index.html').toString('utf8'), content)));
   assertNoPrivateCareer(files, source, content);
   return files;
+}
+
+const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+const RAW_TOKENS = new Set(['intro', 'focus', 'educationMeta']);
+
+// index.html 里的 {{name}} 等占位与 <!-- if:x -->…<!-- end:x --> 区块在构建时由公开内容填好：
+// 禁用 JavaScript 的访客和搜索引擎看到的首屏，与 app.js 运行后渲染的是同一份资料。
+export function renderIndex(html, content) {
+  const { profile = {}, journey = [], experience = [], articles = [] } = content;
+  const schooling = journey.filter((entry) => entry.degree && entry.major);
+  const emblem = schooling.find((entry) => entry.emblem)?.emblem;
+  const values = {
+    siteTitle: profile.siteTitle,
+    description: profile.description,
+    name: profile.name,
+    solarName: `${profile.name ?? ''}'s solar system`.toUpperCase(),
+    intro: profile.motto ? `${escapeHTML(profile.intro)}，<span class="hero-motto">${escapeHTML(profile.motto)}</span>` : `${escapeHTML(profile.intro)}。`,
+    role: experience.map((company) => company.profileRole).join('\n') || '未展示职业经历',
+    location: profile.location,
+    locationEn: profile.locationEn,
+    focus: (profile.focus || []).map((item) => `<li>${escapeHTML(item)}</li>`).join(''),
+    portraitSrc: profile.portrait?.src,
+    portraitAlt: profile.portrait?.alt,
+    school: [...new Set(schooling.map((entry) => entry.title))].join(' ／ '),
+    educationMeta: schooling.map((entry) => `${escapeHTML(entry.degree)} · ${escapeHTML(entry.major)}`).join(' <i>／</i> '),
+    emblemSrc: emblem?.src,
+    emblemAlt: emblem?.alt,
+    now: profile.now,
+    nowNote: profile.nowNote,
+    latestTitle: articles[0]?.title,
+  };
+  const shown = { portrait: Boolean(profile.portrait), education: schooling.length > 0, emblem: Boolean(emblem), focus: Boolean(profile.focus?.length) };
+  const innermost = /<!-- if:([a-z]+) -->((?:(?!<!-- if:)[\s\S])*?)<!-- end:\1 -->/g;
+  let blocks = html;
+  for (let previous = ''; previous !== blocks;) {
+    previous = blocks;
+    blocks = blocks.replace(innermost, (block, key, inner) => {
+      if (!(key in shown)) throw new Error(`index.html has a block <!-- if:${key} --> that the build does not know; expected one of ${Object.keys(shown).join(', ')}. Rename it or add it to renderIndex in scripts/site.mjs.`);
+      return shown[key] ? inner : '';
+    });
+  }
+  const rendered = blocks
+    .replace(/\{\{([A-Za-z]+)\}\}/g, (token, key) => {
+      if (!(key in values)) throw new Error(`index.html uses ${token}, which the build does not fill; expected one of ${Object.keys(values).map((name) => `{{${name}}}`).join(', ')}. Fix the placeholder or add it to renderIndex in scripts/site.mjs.`);
+      return RAW_TOKENS.has(key) ? values[key] : escapeHTML(values[key]);
+    });
+  const leftover = rendered.match(/\{\{[^}]*\}\}|<!-- (?:if|end):[^>]*-->/);
+  if (leftover) throw new Error(`index.html still contains ${leftover[0]} after rendering; placeholders are {{name}} and blocks are <!-- if:key -->…<!-- end:key --> with the same key. Fix the markup in index.html.`);
+  return rendered;
 }
 
 export async function writePublicFiles(files, output = join(PROJECT_ROOT, 'dist')) {
