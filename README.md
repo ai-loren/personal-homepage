@@ -42,11 +42,11 @@ node scripts/site.mjs serve
 | `projects` | 项目介绍、筛选维度取值、技术标签及外部链接 |
 | `ideas` | 「问题」栏：还在想的开放问题，按展示顺序排列（栏目 id 仍为 `ideas`） |
 
-文章与项目的 `body` 支持 `p`（段落）、`h3`（小标题）、`quote`（引用）、`ul`（列表）、`links`（参考链接，`items: [{ text, url }]`）和 `tool`（站内小工具，`tool: "<工具 id>"`）。正文按纯文本渲染，不解析 HTML 或 Markdown。
+文章与项目的 `body` 支持 `p`（段落）、`h3`（小标题）、`quote`（引用）、`ul`（列表）、`links`（参考链接，`items: [{ text, url }]`；`url` 写成 `#lab/goodput` 这种形式就是站内链接）和 `tool`（站内小工具，`tool: "<工具 id>"`）。正文按纯文本渲染，不解析 HTML 或 Markdown。
 
 每篇文章、每个项目的 `id` 应当唯一，推荐使用英文短横线，例如 `my-first-post`。文章链接形如 `#writing/my-first-post`，可以直接打开、刷新、使用浏览器前进后退。
 
-项目的 `url` 是演示地址，`source` 是源码地址，均使用完整的 `https://...` URL；留空就不会出现相应按钮。`artwork` 支持 `browser`、`timer`、`notes`、`terminal`、`ledger` 五种 CSS 示意图。计时器等概念卡片仅用于介绍项目，不代表已经实现对应应用。
+项目的 `url` 是演示地址，`source` 是源码地址，均使用完整的 `https://...` URL；留空就不会出现相应按钮。`artwork` 支持 `browser`、`timer`、`notes`、`terminal`、`ledger`、`checkpoint` 六种 CSS 示意图。计时器等概念卡片仅用于介绍项目，不代表已经实现对应应用。
 
 姓名已配置为 loren；概念项目仍为演示内容。上线前请替换；同时更新 `index.html` 中的初始 `<title>`、description 和首页介绍，让禁用 JavaScript 时的展示也与你的资料一致。
 
@@ -72,7 +72,7 @@ node scripts/site.mjs serve
 
 ### 职业展示回归验证（可选）
 
-先运行 `node --test scripts/site.test.mjs scripts/vram-ledger.test.mjs`，前者检查数据裁剪、完整源数据保留、旧产物清理、路径遍历和私有文件拒绝访问，后者用手算的数值检查显存账本的公式。Node 测试不需要安装额外依赖。
+先运行 `node --test scripts/site.test.mjs scripts/vram-ledger.test.mjs tools/ckpt-goodput/test/ckpt-goodput.test.mjs`，第一个检查数据裁剪、完整源数据保留、旧产物清理、路径遍历和私有文件拒绝访问，后两个用独立算好的数值检查两个小工具的公式。Node 测试不需要安装额外依赖。
 
 浏览器回归使用固定版本 Playwright CLI。保持安全预览服务运行，再在项目根目录执行：
 
@@ -88,6 +88,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-co
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/detail-mode.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/project-facets.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/vram-ledger.js)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/ckpt-goodput.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 ```
 
@@ -103,7 +104,11 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 - 文章分类、标题/摘要/正文搜索、分页（每页 6 / 10 / 20 条，默认 10 条；切换分类或搜索时回到第 1 页）及阅读窗口。
 - 实验记录：卡片显示关键指标对比与缩略曲线，详情页含假设、设置、指标、SVG 折线图/条形图、发现与结论；图表随页面主题配色，数据写在 `content.js` 的 `experiments` 中（当前为模拟示意）。每个实验带若干份可下载的 CSV（`data/lab/<实验 id>/`），`content.js` 里的 `datasets` 记录说明、行数、字节数与逐列含义；构建只发布 `datasets` 列出的文件，`scripts/site.test.mjs` 校验表头、行数、字节数和首行与描述一致，改了 CSV 要同步改描述。
 - 作品筛选：按 `projectFacets` 每个维度一排（类型 / 使用 / 代码），每排有自己的「全部」，各排同时生效。「使用」是多选维度，一个作品可以同时是 Web、CLI、SDK。按钮只列出至少有一个作品用到的值，只剩一个值的维度整排不显示，会让结果变空的选项被禁用。构建会拒绝 `projectFacets` 里没有声明的值，加新取值先在那里声明。
-- 站内小工具：作品正文里的 `{ type: 'tool', tool: '<id>' }` 会挂载 `tools/<id>.js` 注册在 `window.SITE_TOOLS` 上的工具。新增工具要做三件事：写 `tools/<id>.js`、把它加进 `scripts/site.mjs` 的 `PUBLIC_FILES`、在 `index.html` 里于 `app.js` 之前加 `<script>`；构建会拒绝正文里引用了未发布的工具 id。工具纯前端运行、不联网，输入只按数值处理。目前有显存账本（VRAM Ledger）：正本在独立仓库 [ai-loren/vram-ledger](https://github.com/ai-loren/vram-ledger)，这里的 `tools/vram-ledger.js` 是逐字节复制件。改它要先在那个仓库里改、跑通测试，再用 `cp ../vram-ledger/vram-ledger.js tools/` 复制过来，提交时写明对应的上游 commit。计算公式与假设写在它的作品详情里，`scripts/vram-ledger.test.mjs` 用手算的数值逐项核对，Pages 工作流在构建前会跑它。
+- 站内小工具：作品正文里的 `{ type: 'tool', tool: '<id>' }` 会挂载注册在 `window.SITE_TOOLS['<id>']` 上的工具，脚本放在 `tools/<id>.js` 或子模块里的 `tools/<id>/<id>.js`。新增工具要做三件事：放好脚本、把它加进 `scripts/site.mjs` 的 `PUBLIC_FILES`、在 `index.html` 里于 `app.js` 之前加 `<script>`；构建会拒绝正文里引用了未发布的工具 id。工具纯前端运行、不联网，输入只按数值处理。目前有两个，代码都在各自的仓库里：
+  - 显存账本（VRAM Ledger，[ai-loren/vram-ledger](https://github.com/ai-loren/vram-ledger)）：`tools/vram-ledger.js` 是正本的逐字节复制件。改它要先在那个仓库里改、跑通测试，再用 `cp ../vram-ledger/vram-ledger.js tools/` 复制过来，提交时写明对应的上游 commit；`scripts/vram-ledger.test.mjs` 核对它的公式。
+  - checkpoint 间隔计算器（Ckpt Goodput，[ai-loren/ckpt-goodput](https://github.com/ai-loren/ckpt-goodput)）：以 git 子模块挂在 `tools/ckpt-goodput`，本仓库只记录它的 commit，不存它的代码。克隆时用 `git clone --recurse-submodules`，已经克隆的跑一次 `git submodule update --init`，否则构建会报缺文件并给出这条命令。升级到新版本：`git -C tools/ckpt-goodput pull`，跑过测试后提交子模块指针。Pages 工作流会连子模块一起检出，并在构建前跑子模块自带的 `test/ckpt-goodput.test.mjs`。
+
+  计算公式与假设写在各自的作品详情里。两个工具共用表单、结果面板、图例和改法按钮的样式（`styles.css` 里 `.vram-*, .ckpt-*` 并列的规则），各自的配色和图表单独写。
 - 详情展示方式：作品、文字、实验、问题的详情顶部有「浮层 | 整页」切换，选择存在 localStorage，默认浮层。整页模式在站内显示（保留页头导航），网址与浮层相同，「← 返回」或 Esc 回到列表并恢复原滚动位置。两种模式共用同一份 `#reader-shell`，切换时整体移动，所以页面里 `#reader-*` 与 `#question-replies` 始终只有一份。
 - 背景音乐：页头右上角的音符按钮打开面板，可开关背景音乐（音符 / 斜线音符）和调音量，曲目在 `content.js` 的 `music.tracks` 中按顺序循环。进入页面时默认以 50% 音量尝试自动播放；浏览器禁止无手势自动出声时（多数浏览器的默认策略），改为在访客第一次点击、触摸或按键时开始。访客主动关闭后不再自动播放，开关和音量存在 localStorage。当前曲目是受版权保护的电影原声，未取得授权，面板底部有版权声明和联系方式；收到版权方要求时，删除 `audio/` 下的文件并改写 git 历史、强制推送才能彻底移除（构建时缺文件的曲目会被移出播放列表，全缺则隐藏音乐控件）。
 - 问题回复：每个问题点开后有独立回复区，由 giscus（GitHub Discussions）承载，访客登录 GitHub 后回复，按 `question:<问题 id>` 对应讨论帖。回复只以 giscus.app 的跨域 iframe 嵌入（带 sandbox），本站不执行第三方脚本或样式；`index.html` 的 CSP 只放行本站资源与 `frame-src https://giscus.app`，因此页面里不能写内联脚本、事件属性或 style 属性，CSS 变量要用 `element.style.setProperty` 设置。`content.js` 的 `comments.categoryId` 为空时回复区只显示「正在接入中」，不加载任何外部内容。`giscus.json` 只放行 `comments.site` 的域名（测试会校验两者一致），在其他域名（含本地预览）打开时回复区不嵌入 giscus，只给出跳到正式网站同一问题的链接；要在本地测试回复，需临时把本地地址加进 `giscus.json` 的 `origins` 并推送。问题 id 一旦发布不要改，否则旧回复会和问题脱钩。

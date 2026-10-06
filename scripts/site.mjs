@@ -14,7 +14,7 @@ const PRIVATE_MARKERS = {
 const OUTPUT_MARKER = 'personal-homepage public output v1\n';
 const PUBLIC_FILES = [
   'index.html', 'styles.css', 'app.js', 'cosmos.js', 'globe-renderer.js',
-  'solar-system-3d.js', 'page-scenes.js', 'tools/vram-ledger.js', '.nojekyll',
+  'solar-system-3d.js', 'page-scenes.js', 'tools/vram-ledger.js', 'tools/ckpt-goodput/ckpt-goodput.js', '.nojekyll',
   'assets/lorens-saturn-favicon.png', 'assets/loren-portrait.webp',
   'assets/xidian-university-emblem.png',
   'vendor/three.min.js', 'vendor/THREE-LICENSE.txt',
@@ -131,12 +131,12 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
       paths.add(entry.logo.slice(2));
     }
   }
-  const toolIds = PUBLIC_FILES.filter((name) => name.startsWith('tools/')).map((name) => name.slice(6, -3));
+  const toolIds = PUBLIC_FILES.filter((name) => name.startsWith('tools/')).map((name) => name.split('/').pop().slice(0, -3));
   for (const project of content.projects || []) {
     const versions = [project, ...Object.values(project.translations || {})];
     for (const block of versions.flatMap((version) => version.body || []).filter((block) => block.type === 'tool')) {
       if (!toolIds.includes(block.tool)) {
-        throw new Error(`Project ${project.id} embeds tool ${JSON.stringify(block.tool)}; expected one of ${toolIds.join(', ')}. Fix the id, or add tools/<id>.js to PUBLIC_FILES and a <script> tag for it in index.html.`);
+        throw new Error(`Project ${project.id} embeds tool ${JSON.stringify(block.tool)}; expected one of ${toolIds.join(', ')}. Fix the id, or add the tool's script (tools/<id>/<id>.js for a submodule) to PUBLIC_FILES and a <script> tag for it in index.html.`);
       }
     }
     const images = [project.image, ...versions.flatMap((version) => (version.body || []).filter((block) => block.type === 'image'))].filter(Boolean);
@@ -177,6 +177,9 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
     } catch (error) {
       if (error.code === 'ENOENT' && datasets.has(name)) {
         throw new Error(`Dataset ${name} is listed in content.js experiments but missing on disk. Generate the CSV or remove its datasets entry.`);
+      }
+      if (error.code === 'ENOENT' && /^tools\/[^/]+\/[^/]+\.js$/.test(name)) {
+        throw new Error(`${name} is missing: it comes from the git submodule at ${name.slice(0, name.lastIndexOf('/'))}, which is not checked out. Run \`git submodule update --init\` and build again.`);
       }
       throw error;
     }

@@ -494,6 +494,7 @@
   const artworks = {
     browser: '<div class="mini-browser"><div class="browser-dots"><i></i><i></i><i></i></div><strong>Hello, world.</strong><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-pill"></div></div>',
     timer: '<div class="focus-dial"><strong>25:00</strong><span>ONE THING</span></div>',
+    checkpoint: '<div class="ckpt-art"><strong>87.7<small>% goodput</small></strong><div class="ckpt-line"><i></i><i></i><i></i><i></i><i></i><b></b><em></em></div><span>SAVE · FAIL · REWIND</span></div>',
     ledger: '<div class="ledger-art"><strong>60.2<small> / 80 GiB</small></strong><div class="ledger-bar"><i></i><i></i><i></i><i></i><b></b></div><span>PARAMS · GRADS · OPTIM · ACTS</span></div>',
     notes: '<div class="note-stack"><div class="mini-note"><span>A little thought.</span><div class="mini-line"></div><div class="mini-line short"></div></div></div>',
     terminal: '<div class="tiny-terminal"><span>~ / tiny-scripts</span><br>$ make life easier<br>one small step at a time<span> _</span></div>',
@@ -879,6 +880,7 @@
       if (block.type === 'image') return `<figure class="reader-figure"><img src="${escapeHTML(block.src)}" alt="${escapeHTML(block.alt)}" loading="lazy">${block.caption ? `<figcaption>${escapeHTML(block.caption)}</figcaption>` : ''}</figure>`;
       if (block.type === 'tool') return `<div class="site-tool" data-tool="${escapeHTML(block.tool)}"></div>`;
       if (block.type === 'links') return `<ul class="reader-refs">${block.items.map((link) => {
+        if (/^#[a-z]+\/[a-z0-9-]+$/.test(link.url)) return `<li><a href="${link.url}">${escapeHTML(link.text)} →</a></li>`;
         const url = safeURL(link.url);
         return `<li>${url ? `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(link.text)} ↗</a>` : escapeHTML(link.text)}</li>`;
       }).join('')}</ul>`;
