@@ -126,7 +126,7 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
     if (!TRACK_PATH.test(track.file)) {
       throw new Error(`Music track "${track.title}" expects ./audio/<name>.mp3 (lowercase, no traversal); got ${track.file}. Move the file there and update content.js.`);
     }
-    // 音频受版权保护时不进仓库（.gitignore），CI 里就会缺文件：此时只发布有文件的曲目，全缺则前端隐藏音乐控件。
+    // 曲目文件可能被移除（例如收到版权方要求后）：只发布有文件的曲目，全缺则前端隐藏音乐控件。
     const bytes = await readSourceFile(root, track.file.slice(2)).catch((error) => {
       if (error.code === 'ENOENT') return null;
       throw error;
