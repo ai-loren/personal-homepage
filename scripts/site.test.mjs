@@ -211,12 +211,12 @@ test('every embedded tool is published and loads before app.js, and an unknown t
   const files = await createPublicFiles();
   const html = files.get('index.html').toString();
   const tools = [...files.keys()].filter((name) => name.startsWith('tools/'));
-  assert.deepEqual(tools, ['tools/vram-ledger.js', 'tools/ckpt-goodput/ckpt-goodput.js']);
+  assert.deepEqual(tools, ['tools/vram-ledger.js', 'tools/ckpt-goodput/ckpt-goodput.js', 'tools/agent-trace-replay/agent-trace-replay.js']);
   for (const name of tools) {
     const at = html.indexOf(`src="./${name}?`);
     assert(at > 0 && at < html.indexOf('src="./app.js'), `${name} must be loaded by index.html before app.js mounts it`);
   }
-  assert.deepEqual(source.projects.flatMap((project) => (project.body || []).filter((block) => block.type === 'tool').map((block) => block.tool)), ['vram-ledger', 'ckpt-goodput']);
+  assert.deepEqual(source.projects.flatMap((project) => (project.body || []).filter((block) => block.type === 'tool').map((block) => block.tool)), ['vram-ledger', 'ckpt-goodput', 'agent-trace-replay']);
 
   const root = await temporaryDirectory(t);
   for (const [name, bytes] of files) {
@@ -228,7 +228,7 @@ test('every embedded tool is published and loads before app.js, and an unknown t
   const poisoned = structuredClone(source);
   poisoned.projects.find((project) => project.id === 'vram-ledger').body.push({ type: 'tool', tool: 'vram-legder' });
   await writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(poisoned)};`);
-  await assert.rejects(createPublicFiles({ root }), /Project vram-ledger embeds tool "vram-legder"; expected one of vram-ledger, ckpt-goodput\./);
+  await assert.rejects(createPublicFiles({ root }), /Project vram-ledger embeds tool "vram-legder"; expected one of vram-ledger, ckpt-goodput, agent-trace-replay\./);
 
   await writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(source)};`);
   await rm(join(root, 'tools/ckpt-goodput'), { recursive: true });

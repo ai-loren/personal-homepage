@@ -14,7 +14,7 @@ const PRIVATE_MARKERS = {
 const OUTPUT_MARKER = 'personal-homepage public output v1\n';
 const PUBLIC_FILES = [
   'index.html', 'styles.css', 'app.js', 'cosmos.js', 'globe-renderer.js',
-  'solar-system-3d.js', 'page-scenes.js', 'tools/vram-ledger.js', 'tools/ckpt-goodput/ckpt-goodput.js', '.nojekyll',
+  'solar-system-3d.js', 'page-scenes.js', 'tools/vram-ledger.js', 'tools/ckpt-goodput/ckpt-goodput.js', 'tools/agent-trace-replay/agent-trace-replay.js', '.nojekyll',
   'assets/lorens-saturn-favicon.png', 'assets/loren-portrait.webp',
   'assets/xidian-university-emblem.png',
   'vendor/three.min.js', 'vendor/THREE-LICENSE.txt',

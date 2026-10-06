@@ -494,6 +494,7 @@
   const artworks = {
     browser: '<div class="mini-browser"><div class="browser-dots"><i></i><i></i><i></i></div><strong>Hello, world.</strong><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-pill"></div></div>',
     timer: '<div class="focus-dial"><strong>25:00</strong><span>ONE THING</span></div>',
+    trace: '<div class="trace-art"><div class="trace-art-line"><i class="is-think"></i><i class="is-call"></i><i class="is-ask"></i><i class="is-denied"></i><i class="is-call"></i><i class="is-done"></i><b></b></div><span>THINK · CALL · ASK · DENY · RETRY · DONE</span></div>',
     checkpoint: '<div class="ckpt-art"><strong>87.7<small>% goodput</small></strong><div class="ckpt-line"><i></i><i></i><i></i><i></i><i></i><b></b><em></em></div><span>SAVE · FAIL · REWIND</span></div>',
     ledger: '<div class="ledger-art"><strong>60.2<small> / 80 GiB</small></strong><div class="ledger-bar"><i></i><i></i><i></i><i></i><b></b></div><span>PARAMS · GRADS · OPTIM · ACTS</span></div>',
     notes: '<div class="note-stack"><div class="mini-note"><span>A little thought.</span><div class="mini-line"></div><div class="mini-line short"></div></div></div>',

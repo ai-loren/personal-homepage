@@ -1,3 +1,6 @@
 [submodule "tools/ckpt-goodput"]
 	path = tools/ckpt-goodput
 	url = https://github.com/ai-loren/ckpt-goodput.git
+[submodule "tools/agent-trace-replay"]
+	path = tools/agent-trace-replay
+	url = https://github.com/ai-loren/agent-trace-replay.git
