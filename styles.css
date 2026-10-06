@@ -823,7 +823,7 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(6px); }
 .vram-field > span { font-size: 11px; color: var(--muted); }
 .vram-field input, .vram-field select { width: 100%; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; transition: border-color .2s, box-shadow .2s; }
 .vram-field input:focus-visible, .vram-field select:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
-.vram-form fieldset:first-of-type > .vram-field, .vram-custom { grid-column: 1 / -1; }
+.vram-form fieldset > .vram-field:only-of-type, .vram-custom { grid-column: 1 / -1; }
 .vram-custom { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px 12px; }
 .vram-custom[hidden] { display: none; }
 .vram-params, .vram-gpus { grid-column: 1 / -1; margin: 0; color: var(--faint); font-family: var(--mono); font-size: 11px; }
@@ -844,7 +844,7 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(6px); }
 :root[data-theme="light"] .vram[data-state="tight"] :is(.vram-verdict, .vram-peek span) { color: #9a6a10; }
 :root[data-theme="light"] .vram[data-state="over"] :is(.vram-verdict, .vram-peek span) { color: #b4442f; }
 .reader-body .vram-total { margin-top: 6px; color: var(--faint); font-size: 13px; }
-.vram-total strong { font-family: var(--serif); font-size: 46px; font-weight: 400; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+.vram-total strong { font-family: var(--sans); font-size: 42px; font-weight: 500; line-height: 1.15; letter-spacing: -.02em; color: var(--text); font-variant-numeric: lining-nums tabular-nums; }
 .vram-bar { position: relative; margin: 14px 0 12px; height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--line) 55%, transparent); }
 .vram-fill { display: flex; height: 100%; overflow: hidden; border-radius: inherit; }
 .vram-fill i { display: block; height: 100%; transition: width .35s ease; }
@@ -880,7 +880,7 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(6px); }
 }
 
 .ledger-art { width: 70%; display: grid; gap: 12px; }
-.ledger-art strong { font-family: var(--serif); font-size: 34px; font-weight: 400; color: var(--accent); font-variant-numeric: tabular-nums; }
+.ledger-art strong { font-family: var(--sans); font-size: 30px; font-weight: 500; letter-spacing: -.02em; color: var(--accent); font-variant-numeric: lining-nums tabular-nums; }
 .ledger-art small { font-size: 14px; color: var(--muted); }
 .ledger-bar { position: relative; display: flex; height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--line) 60%, transparent); }
 .ledger-bar i { display: block; height: 100%; }
