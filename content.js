@@ -1808,7 +1808,7 @@ window.SITE_CONTENT = {
   projects: [
     {
       id: 'managed-agent',
-      name: 'Managed-Agent',
+      name: 'Managed-Agent: 云端Agent Runtime Infra&托管平台',
       subtitle: '托管自主 Agent 的控制面',
       description: '把一段提示词加一个沙箱，变成可治理、可观测、断了能续上的服务。',
       category: '平台',
@@ -1875,6 +1875,7 @@ window.SITE_CONTENT = {
       ],
       translations: {
         en: {
+          name: 'Managed-Agent: Cloud Agent Runtime Infra & Hosting Platform',
           subtitle: 'A control plane for hosting autonomous agents',
           status: 'Source not yet public',
           body: [
