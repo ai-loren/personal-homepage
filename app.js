@@ -498,7 +498,7 @@
     checkpoint: '<div class="ckpt-art"><strong>87.7<small>% goodput</small></strong><div class="ckpt-line"><i></i><i></i><i></i><i></i><i></i><b></b><em></em></div><span>SAVE · FAIL · REWIND</span></div>',
     ledger: '<div class="ledger-art"><strong>60.2<small> / 80 GiB</small></strong><div class="ledger-bar"><i></i><i></i><i></i><i></i><b></b></div><span>PARAMS · GRADS · OPTIM · ACTS</span></div>',
     notes: '<div class="note-stack"><div class="mini-note"><span>A little thought.</span><div class="mini-line"></div><div class="mini-line short"></div></div></div>',
-    terminal: '<div class="tiny-terminal"><span>~ / tiny-scripts</span><br>$ make life easier<br>one small step at a time<span> _</span></div>',
+    terminal: '<div class="tiny-terminal"><span>~ / workspace</span><br>$ make it work<br>then make it better<span> _</span></div>',
   };
 
   const projectTitle = (project) => `<span class="project-name">${escapeHTML(project.name)}${project.tagline ? ':' : ''}</span>${project.tagline

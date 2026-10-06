@@ -258,6 +258,7 @@ p, h1, h2, h3 { margin: 0; overflow-wrap: anywhere; }
 .hero-education-emblem img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .hero-education:hover .hero-education-emblem { transform: translateY(-1px) scale(1.04); border-color: var(--emblem-accent); box-shadow: 0 7px 20px color-mix(in srgb, var(--emblem-accent) 18%, transparent); }
 .hero-education-copy { display: grid; min-width: 0; gap: 3px; }
+.hero-education:not(:has(.hero-education-emblem)) { grid-template-columns: minmax(0, 1fr) auto; }
 .hero-education-label { color: var(--faint); font-family: var(--mono); font-size: 8px; letter-spacing: 1.1px; }
 .hero-education-school { color: var(--text); font-family: var(--han-display); font-size: 14px; font-weight: 500; line-height: 1.5; }
 .hero-education-meta { color: var(--muted); font-family: var(--mono); font-size: 9px; line-height: 1.6; overflow-wrap: anywhere; }
