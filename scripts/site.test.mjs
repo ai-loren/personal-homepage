@@ -160,7 +160,7 @@ test('a bilingual project keeps both languages in step: same blocks, same images
   for (const project of bilingual) {
     assert.deepEqual(Object.keys(project.translations), ['en'], `${project.id}: the reader only switches between Chinese and English`);
     const english = project.translations.en;
-    for (const key of ['subtitle', 'status']) {
+    for (const key of ['subtitle', 'status', ...(project.tagline ? ['tagline'] : [])]) {
       assert(english[key] && english[key] !== project[key], `${project.id}: translations.en.${key} must be its own English text`);
     }
     const shape = (body) => body.map((block) => (block.type === 'image' ? `image:${block.src}` : block.type === 'ul' ? `ul:${block.items.length}` : block.type));

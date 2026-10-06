@@ -497,13 +497,17 @@
     terminal: '<div class="tiny-terminal"><span>~ / tiny-scripts</span><br>$ make life easier<br>one small step at a time<span> _</span></div>',
   };
 
+  const projectTitle = (project) => `<span class="project-name">${escapeHTML(project.name)}</span>${project.tagline
+    ? `<span class="visually-hidden">：</span><span class="project-tagline">${escapeHTML(project.tagline)}</span>`
+    : ''}`;
+
   function renderProjects() {
     const matching = projects.filter((project) => projectCategory === '全部' || project.category === projectCategory);
     $('#project-count').textContent = `${matching.length} 个作品`;
     $('#project-list').innerHTML = matching.map((project) => `
       <a class="project-card" href="${detailHref('projects', project.id)}">
         <div class="project-visual" aria-hidden="true"><span class="project-label">${escapeHTML(project.category)} / ${escapeHTML(project.status)}</span>${project.image ? `<img class="project-shot" src="${escapeHTML(project.image.src)}" alt="" loading="lazy">` : artworks[project.artwork] || artworks.browser}</div>
-        <div class="project-content"><div class="project-heading"><div><h2>${escapeHTML(project.name)}</h2></div><span class="item-arrow" aria-hidden="true">↗</span></div>
+        <div class="project-content"><div class="project-heading"><div><h2>${projectTitle(project)}</h2></div><span class="item-arrow" aria-hidden="true">↗</span></div>
         <p>${escapeHTML(project.description)}</p><div class="item-meta">${project.tags.map((tag) => `<span class="item-tag">${escapeHTML(tag)}</span>`).join('')}<span>${escapeHTML(project.status)}</span></div></div>
       </a>`).join('');
     if (!matching.length) $('#project-list').innerHTML = '<p class="empty-state">新的作品正在路上。</p>';
@@ -857,7 +861,8 @@
     languageToggle.setAttribute('aria-label', english ? '切换为中文' : 'Switch to English');
     $('.reader-content').lang = english ? 'en' : 'zh-CN';
     $('#reader-kind').textContent = { writing: 'READING ROOM', projects: 'PROJECT NOTES', lab: 'EXPERIMENT LOG', ideas: 'OPEN QUESTION' }[page];
-    $('#reader-title').textContent = item.title || item.name;
+    if (page === 'projects') $('#reader-title').innerHTML = projectTitle(item);
+    else $('#reader-title').textContent = item.title || item.name;
     $('#reader-meta').textContent = {
       writing: () => `${item.date} / ${item.category} / ${readingTime(item)} 分钟阅读`,
       projects: () => `${item.subtitle} / ${item.status}`,

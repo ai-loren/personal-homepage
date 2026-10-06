@@ -520,7 +520,12 @@ p, h1, h2, h3 { margin: 0; overflow-wrap: anywhere; }
 .project-visual { height: 200px; display: flex; align-items: center; justify-content: center; background: var(--surface); overflow: hidden; position: relative; }
 .project-content { padding: 22px 24px 23px; }
 .project-heading { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
-.project-content h2 { font-family: var(--han-display); font-size: 19px; font-weight: 500; margin-bottom: 8px; line-height: 1.5; }
+.project-content h2 { font-family: var(--han-display); font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.45; }
+.project-name { color: var(--accent); }
+:root[data-theme="light"] .project-name { color: color-mix(in srgb, var(--accent) 45%, var(--text)); }
+.project-tagline { display: block; margin-top: 4px; font-size: 15px; font-weight: 500; line-height: 1.6; color: var(--text); }
+.reader-content > h2 .project-tagline { margin-top: 6px; font-size: 19px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .project-content p { color: var(--muted); font-size: 12px; line-height: 1.8; min-height: 43px; }
 .project-content .item-meta { margin-top: 18px; }
 .project-label { position: absolute; top: 16px; left: 18px; font-family: var(--mono); color: var(--faint); letter-spacing: 1px; font-size: 8px; }
@@ -1028,6 +1033,8 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(6px); }
   .list-toolbar { align-items: stretch; }
   .writing-item { grid-template-columns: minmax(0, 1fr) 20px; }
   .writing-item h2, .project-content h2, .idea-content h2 { font-size: 16px; }
+  .project-content h2 { font-size: 18px; }
+  .project-tagline { font-size: 13px; }
   .item-meta { gap: 7px; }
   .project-visual { height: 180px; }
   .mini-browser, .tiny-terminal { width: 76%; }
