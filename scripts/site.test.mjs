@@ -125,6 +125,34 @@ test('dataset paths outside data/lab and missing dataset files stop publication'
   await assert.rejects(poison('./data/lab/goodput/not_generated.csv'), /missing on disk/);
 });
 
+test('every project image is published, and unsafe project image paths stop publication', async (t) => {
+  const files = await createPublicFiles();
+  const images = source.projects.flatMap((project) => [project.image, ...(project.body || []).filter((block) => block.type === 'image')]).filter(Boolean);
+  assert(source.projects.some((project) => project.image), 'a card image must be among the checked images');
+  assert(source.projects.some((project) => (project.body || []).some((block) => block.type === 'image')), 'a body image must be among the checked images');
+  for (const image of images) assert(files.has(image.src.slice(2)), `${image.src} must be published`);
+  const root = await temporaryDirectory(t);
+  for (const [name, bytes] of files) {
+    if (name === 'content.js') continue;
+    const target = join(root, name);
+    await mkdir(join(target, '..'), { recursive: true });
+    await writeFile(target, bytes);
+  }
+  const poison = async (place, src) => {
+    const poisoned = structuredClone(source);
+    const project = poisoned.projects.find((entry) => entry.image);
+    if (place === 'card') project.image = { src, alt: '' };
+    else project.body = [{ type: 'image', src, alt: '' }];
+    await writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(poisoned)};`);
+    return createPublicFiles({ root });
+  };
+  for (const place of ['card', 'body']) {
+    for (const src of ['./assets/projects/../../site.config.mjs', './assets/projects/demo/Shot.png', './assets/projects/demo/shot.gif', 'assets/projects/demo/shot.png', './assets/shot.png']) {
+      await assert.rejects(poison(place, src), /expects \.\/assets\/projects\/<project>\/<name>/, `${place} ${src}`);
+    }
+  }
+});
+
 test('published page keeps a strict CSP and no inline script entry points', async () => {
   const files = await createPublicFiles();
   const html = files.get('index.html').toString();
@@ -161,6 +189,52 @@ test('the reply site is allowed by giscus.json, which only lists https origins',
   assert(Array.isArray(origins) && origins.length > 0, 'giscus.json must restrict origins; without it any site can post into the discussions');
   assert(origins.every((origin) => new URL(origin).protocol === 'https:' && new URL(origin).origin === origin), `giscus.json origins must be bare https origins; got ${origins.join(', ')}`);
   assert(origins.includes(site.origin), `giscus.json must allow ${site.origin}, or replies on the production site are refused`);
+});
+
+test('music tracks publish when present, are dropped when missing, and reject unsafe paths', async (t) => {
+  const root = await temporaryDirectory(t);
+  const files = await createPublicFiles();
+  for (const [name, bytes] of files) {
+    if (name === 'content.js' || name.startsWith('audio/')) continue;
+    const target = join(root, name);
+    await mkdir(join(target, '..'), { recursive: true });
+    await writeFile(target, bytes);
+  }
+  const write = (music) => {
+    const content = structuredClone(source);
+    content.music = music;
+    return writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(content)};`);
+  };
+  await mkdir(join(root, 'audio'), { recursive: true });
+  await writeFile(join(root, 'audio', 'present.mp3'), Buffer.from('ID3fake'));
+  await write({ tracks: [{ title: 'Present', artist: 'A', file: './audio/present.mp3' }, { title: 'Missing', artist: 'B', file: './audio/missing.mp3' }] });
+  const built = await createPublicFiles({ root });
+  assert(built.has('audio/present.mp3'), 'existing track must be published');
+  assert(!built.has('audio/missing.mp3'));
+  assert.deepEqual(decodeContent(built).music.tracks.map((track) => track.title), ['Present'], 'missing tracks must be removed from the published playlist');
+  for (const file of ['./audio/../site.config.mjs', './audio/Track.mp3', './audio/track.wav', 'audio/track.mp3', './data/track.mp3']) {
+    await write({ tracks: [{ title: 'Bad', artist: 'C', file }] });
+    await assert.rejects(createPublicFiles({ root }), /expects \.\/audio\/<name>\.mp3/, file);
+  }
+});
+
+test('preview server answers byte ranges so Safari can stream audio', async (t) => {
+  const files = new Map([['audio/a.mp3', Buffer.from('0123456789')]]);
+  const server = createPreviewServer(files);
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const full = await fetch(`${origin}/audio/a.mp3`);
+  assert.equal(full.headers.get('content-type'), 'audio/mpeg');
+  assert.equal(full.headers.get('accept-ranges'), 'bytes');
+  const partial = await fetch(`${origin}/audio/a.mp3`, { headers: { Range: 'bytes=2-5' } });
+  assert.equal(partial.status, 206);
+  assert.equal(partial.headers.get('content-range'), 'bytes 2-5/10');
+  assert.equal(await partial.text(), '2345');
+  const suffix = await fetch(`${origin}/audio/a.mp3`, { headers: { Range: 'bytes=-3' } });
+  assert.equal(await suffix.text(), '789');
+  assert.equal((await fetch(`${origin}/audio/a.mp3`, { headers: { Range: 'bytes=20-' } })).status, 416);
 });
 
 test('all and ByteDance publications still build with their allowed assets', async () => {

@@ -83,6 +83,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-co
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/ufo-controls-reach.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/writing-pagination.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/question-replies.js)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/background-music.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 ```
 
@@ -97,6 +98,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 - 个人太阳系导航：水星对应关于、月球对应文字、地球对应作品、火星对应实验、木星对应经历、土星对应收藏、海王星对应问题；金星和天王星作为完整太阳系的背景天体。
 - 文章分类、标题/摘要/正文搜索、分页（每页 6 / 10 / 20 条，默认 10 条；切换分类或搜索时回到第 1 页）及阅读窗口。
 - 实验记录：卡片显示关键指标对比与缩略曲线，详情页含假设、设置、指标、SVG 折线图/条形图、发现与结论；图表随页面主题配色，数据写在 `content.js` 的 `experiments` 中（当前为模拟示意）。每个实验带若干份可下载的 CSV（`data/lab/<实验 id>/`），`content.js` 里的 `datasets` 记录说明、行数、字节数与逐列含义；构建只发布 `datasets` 列出的文件，`scripts/site.test.mjs` 校验表头、行数、字节数和首行与描述一致，改了 CSV 要同步改描述。
+- 背景音乐：页头右上角的音符按钮打开面板，可开关背景音乐（音符 / 斜线音符）和调音量，曲目在 `content.js` 的 `music.tracks` 中按顺序循环。进入页面时默认以 50% 音量尝试自动播放；浏览器禁止无手势自动出声时（多数浏览器的默认策略），改为在访客第一次点击、触摸或按键时开始。访客主动关闭后不再自动播放，开关和音量存在 localStorage。当前曲目是受版权保护的电影原声，未取得授权，面板底部有版权声明和联系方式；收到版权方要求时，删除 `audio/` 下的文件并改写 git 历史、强制推送才能彻底移除（构建时缺文件的曲目会被移出播放列表，全缺则隐藏音乐控件）。
 - 问题回复：每个问题点开后有独立回复区，由 giscus（GitHub Discussions）承载，访客登录 GitHub 后回复，按 `question:<问题 id>` 对应讨论帖。回复只以 giscus.app 的跨域 iframe 嵌入（带 sandbox），本站不执行第三方脚本或样式；`index.html` 的 CSP 只放行本站资源与 `frame-src https://giscus.app`，因此页面里不能写内联脚本、事件属性或 style 属性，CSS 变量要用 `element.style.setProperty` 设置。`content.js` 的 `comments.categoryId` 为空时回复区只显示「正在接入中」，不加载任何外部内容。`giscus.json` 只放行 `comments.site` 的域名（测试会校验两者一致），在其他域名（含本地预览）打开时回复区不嵌入 giscus，只给出跳到正式网站同一问题的链接；要在本地测试回复，需临时把本地地址加进 `giscus.json` 的 `origins` 并推送。问题 id 一旦发布不要改，否则旧回复会和问题脱钩。
 - 项目筛选、详情及可选的源码/演示链接。
 - 深浅色模式，记住浏览器中的主题选择。

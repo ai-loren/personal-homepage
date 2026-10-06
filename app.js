@@ -14,6 +14,7 @@
     projects,
     ideas,
     comments = {},
+    music = {},
   } = structuredClone(window.SITE_CONTENT);
   const allowedCareerModes = Object.freeze(Object.keys(careerModeNames));
   const careerLocked = allowedCareerModes.length <= 1;
@@ -500,7 +501,7 @@
     $('#project-count').textContent = `${matching.length} 个作品`;
     $('#project-list').innerHTML = matching.map((project) => `
       <a class="project-card" href="${detailHref('projects', project.id)}">
-        <div class="project-visual" aria-hidden="true"><span class="project-label">${escapeHTML(project.category)} / ${escapeHTML(project.status)}</span>${artworks[project.artwork] || artworks.browser}</div>
+        <div class="project-visual" aria-hidden="true"><span class="project-label">${escapeHTML(project.category)} / ${escapeHTML(project.status)}</span>${project.image ? `<img class="project-shot" src="${escapeHTML(project.image.src)}" alt="" loading="lazy">` : artworks[project.artwork] || artworks.browser}</div>
         <div class="project-content"><div class="project-heading"><div><h2>${escapeHTML(project.name)}</h2></div><span class="item-arrow" aria-hidden="true">↗</span></div>
         <p>${escapeHTML(project.description)}</p><div class="item-meta">${project.tags.map((tag) => `<span class="item-tag">${escapeHTML(tag)}</span>`).join('')}<span>${escapeHTML(project.status)}</span></div></div>
       </a>`).join('');
@@ -834,6 +835,7 @@
   function renderBody(blocks) {
     return blocks.map((block) => {
       if (block.type === 'ul') return `<ul>${block.items.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>`;
+      if (block.type === 'image') return `<figure class="reader-figure"><img src="${escapeHTML(block.src)}" alt="${escapeHTML(block.alt)}" loading="lazy">${block.caption ? `<figcaption>${escapeHTML(block.caption)}</figcaption>` : ''}</figure>`;
       const tag = { p: 'p', h3: 'h3', quote: 'blockquote' }[block.type] || 'p';
       return `<${tag}>${escapeHTML(block.text)}</${tag}>`;
     }).join('');
@@ -973,6 +975,136 @@
       if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
     });
   });
+
+  function setupMusic() {
+    const tracks = (music.tracks || []).filter((track) => /^\.\/audio\/[a-z0-9-]+\.mp3$/.test(track.file));
+    const control = $('#music-control');
+    if (!tracks.length) return;
+    control.hidden = false;
+    const audio = $('#background-music');
+    const toggle = $('#music-toggle');
+    const panel = $('#music-panel');
+    const play = $('#music-play');
+    const volume = $('#music-volume');
+    const MUSIC_KEY = 'personal-space-music';
+    const VOLUME_KEY = 'personal-space-music-volume';
+    let trackIndex = 0;
+    let failures = 0;
+    let wantsMusic = true;
+    let awaitingGesture = false;
+    let savedVolume = 50;
+    try {
+      wantsMusic = localStorage.getItem(MUSIC_KEY) !== 'off';
+      const stored = Number(localStorage.getItem(VOLUME_KEY));
+      if (localStorage.getItem(VOLUME_KEY) !== null && Number.isFinite(stored) && stored >= 0 && stored <= 100) savedVolume = stored;
+    } catch {}
+
+    const remember = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
+    const describe = (track) => `${track.title} · ${track.artist}`;
+    function setVolume(value) {
+      audio.volume = value / 100;
+      volume.value = String(value);
+      $('#music-volume-value').textContent = `${value}%`;
+    }
+    function load(index) {
+      trackIndex = index;
+      audio.src = tracks[index].file;
+      $('#music-now').textContent = describe(tracks[index]);
+    }
+    function sync() {
+      const playing = !audio.paused;
+      control.dataset.playing = String(playing);
+      control.dataset.awaiting = String(!playing && awaitingGesture);
+      $('#music-hint').hidden = playing || !awaitingGesture || !panel.hidden;
+      play.setAttribute('aria-pressed', String(playing));
+      play.setAttribute('aria-label', playing ? '关闭背景音乐' : '播放背景音乐');
+      toggle.setAttribute('aria-label', `背景音乐设置（${playing ? '播放中' : awaitingGesture ? '点一下页面开始播放' : '已关闭'}）`);
+      $('#music-state').textContent = playing ? '正在播放' : awaitingGesture ? '点一下页面就开始播放' : '已关闭';
+    }
+    async function start() {
+      if (!audio.getAttribute('src')) load(trackIndex);
+      try { await audio.play(); } catch {}
+      sync();
+    }
+    function stop() {
+      audio.pause();
+      sync();
+    }
+    function closePanel(restoreFocus = false) {
+      if (panel.hidden) return;
+      panel.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+      sync();
+      if (restoreFocus) toggle.focus({ preventScroll: true });
+    }
+
+    setVolume(savedVolume);
+    const contactEmail = (profile.email || '').trim();
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) $('#music-contact').href = `mailto:${contactEmail}?subject=${encodeURIComponent('背景音乐版权')}`;
+    $('#music-now').textContent = describe(tracks[0]);
+    toggle.addEventListener('click', () => {
+      const opening = panel.hidden;
+      panel.hidden = !opening;
+      toggle.setAttribute('aria-expanded', String(opening));
+      if (opening) closeCareerMenu();
+      sync();
+    });
+    play.addEventListener('click', () => {
+      wantsMusic = audio.paused;
+      remember(MUSIC_KEY, wantsMusic ? 'on' : 'off');
+      if (wantsMusic) start();
+      else stop();
+    });
+    volume.addEventListener('input', () => {
+      const value = Math.round(Number(volume.value));
+      setVolume(value);
+      remember(VOLUME_KEY, String(value));
+    });
+    audio.addEventListener('play', sync);
+    audio.addEventListener('pause', sync);
+    audio.addEventListener('playing', () => { failures = 0; });
+    audio.addEventListener('ended', () => {
+      load((trackIndex + 1) % tracks.length);
+      start();
+    });
+    audio.addEventListener('error', () => {
+      failures += 1;
+      sync();
+      if (wantsMusic && failures < tracks.length) {
+        load((trackIndex + 1) % tracks.length);
+        start();
+      }
+    });
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('#music-control')) closePanel();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !panel.hidden) closePanel(true);
+    });
+    // 浏览器禁止无手势自动出声：先试一次自动播放，被拦下就等访客第一次点击、触摸或按键再开始；访客主动关过则不再自动播放。
+    const gestures = ['pointerdown', 'keydown', 'touchstart'];
+    function disarm() {
+      awaitingGesture = false;
+      sync();
+      gestures.forEach((type) => document.removeEventListener(type, resume, true));
+    }
+    function resume(event) {
+      if (event.target.closest?.('#music-control')) return;
+      disarm();
+      if (wantsMusic && audio.paused) start();
+    }
+    audio.addEventListener('playing', disarm);
+    if (wantsMusic) {
+      start().then(() => {
+        if (!wantsMusic || !audio.paused) return;
+        awaitingGesture = true;
+        gestures.forEach((type) => document.addEventListener(type, resume, { capture: true, passive: true }));
+        sync();
+      });
+    }
+    sync();
+  }
+  setupMusic();
 
   renderFilters('#writing-filters', articles.map((article) => article.category), articleCategory, (category) => {
     articleCategory = category;

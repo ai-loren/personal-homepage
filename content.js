@@ -865,6 +865,7 @@ window.SITE_CONTENT = {
   ],
   library: [
     { type: '经典论文', title: 'Attention Is All You Need', tags: ['模型架构', '注意力'], venue: 'NeurIPS 2017', note: '一切从这里开始。隔一段时间重读一次，每次读到的重点都不一样。', url: 'https://proceedings.neurips.cc/paper_files/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html' },
+    { type: '文章', title: 'Jump Trading：如何构建量化 Multi-Agent 系统', tags: ['Multi-Agent', '评测'], venue: 'ICML 2026 Expo 演讲精编 · 狄奥尼索斯之歌', note: '先用一个模型、一个 Harness 跑通最小闭环，质量、速度或成本真有改善才加复杂度；Multi-Agent 只留给能并行拆解的任务。时点一致性评估和给 AutoResearch 划清边界的做法尤其值得借鉴。', url: 'https://mp.weixin.qq.com/s/IjWdI4hwSW18wV1Hpp6qRA' },
     { type: '经典论文', title: 'ZeRO: Memory Optimizations Toward Training Trillion Parameter Models', tags: ['分布式训练', '显存优化'], venue: 'SC 2020', note: '把优化器状态、梯度和参数切开分到每张卡，显存不再随数据并行重复一份。如今几乎是大模型训练的标配。', url: 'https://dl.acm.org/doi/10.5555/3433701.3433727' },
     { type: '经典论文', title: 'An Empirical Analysis of Compute-Optimal Large Language Model Training', tags: ['Scaling Law', '预训练'], venue: 'NeurIPS 2022', note: '也就是 Chinchilla：同样的算力，模型和数据要一起放大；此前的大模型大多训少了。', url: 'https://proceedings.neurips.cc/paper_files/paper/2022/hash/c1e2faff6f588870935f114ebe04a3e5-Abstract-Conference.html' },
     { type: '经典论文', title: 'Training Language Models to Follow Instructions with Human Feedback', tags: ['对齐', 'RLHF'], venue: 'NeurIPS 2022', note: 'InstructGPT：SFT 加 RLHF 的流程从这里定型，1.3B 的对齐模型比 175B 的 GPT-3 更受偏好。', url: 'https://proceedings.neurips.cc/paper_files/paper/2022/hash/b1efde53be364a73914f58805a001731-Abstract-Conference.html' },
@@ -1806,6 +1807,40 @@ window.SITE_CONTENT = {
   ],
   projects: [
     {
+      id: 'managed-agent',
+      name: 'Managed-Agent',
+      subtitle: '托管自主 Agent 的控制面',
+      description: '把一段提示词加一个沙箱，变成可治理、可观测、断了能续上的服务。',
+      category: '平台',
+      tags: ['TypeScript', 'Agent 基础设施'],
+      image: { src: './assets/projects/managed-agent/session-detail.png', alt: 'Managed-Agent 控制台里一个进行中的会话及其事件日志' },
+      status: '代码暂未公开',
+      url: '',
+      source: '',
+      body: [
+        { type: 'p', text: 'Managed-Agent 是我从零写的一个 Agent 托管平台：你提供提示词、模型和策略，平台负责从「开一个会话」到「这个 Agent 每一回合到底做了什么」之间的一切。纯 TypeScript，Node 24 直接运行、无需构建，自带一个零依赖的 Web 控制台。' },
+        { type: 'p', text: '代码暂时没有公开，也没有在线服务。下面的截图来自本地运行的真实实例，只有模型换成了预先写好回复的替身，方便复现每个流程。' },
+        { type: 'h3', text: '为什么做它' },
+        { type: 'p', text: '想把 Agent 放进生产的团队，都在重复造同一层基础设施：沙箱和镜像、断线后还在的会话、Agent 到底做了什么的记录、安全地交给它凭据、模型故障转移和成本控制，还有每接一个触发源就写一套集成。这一层对每个 Agent 都一样，又不属于任何一个 Agent，而生产事故恰恰多出在这里。' },
+        { type: 'h3', text: '每一步都看得见' },
+        { type: 'image', src: './assets/projects/managed-agent/session-detail.png', alt: '一个进行中的会话：头部是状态与用量，下面是逐条的事件日志', caption: '每次模型调用、工具调用和附件都是日志里一条有序、持久的事件；断线后按序号续上，不漏也不重。' },
+        { type: 'h3', text: '人在回路中' },
+        { type: 'image', src: './assets/projects/managed-agent/approvals.png', alt: '审批队列：两次等待批准的工具调用，各带参数和批准、拒绝按钮', caption: '工具策略设为 prompt 时，Agent 无权自行执行的调用会停下来等人决定。审批队列汇集整个工作区里等人处理的调用。' },
+        { type: 'h3', text: '文件进，文件出' },
+        { type: 'image', src: './assets/projects/managed-agent/files-back.png', alt: '事件日志里的 artifact.created 一行，带 Download 按钮', caption: '消息可以带附件；Agent 放进 outputs/ 的文件在回合结束时变成可下载的产物，存不下的会写明原因。' },
+        { type: 'h3', text: '任意模型，一个目录' },
+        { type: 'image', src: './assets/projects/managed-agent/models.png', alt: '模型目录：付费与免费模型，以及可以添加的免费模型', caption: '一个目录统一管理 OpenRouter、Anthropic、Azure OpenAI、AWS Bedrock 和 Vertex AI 的模型，并实时发现免费模型。密钥只在控制面，沙箱永远拿不到。' },
+        { type: 'image', src: './assets/projects/managed-agent/model-changed.png', alt: '会话换成免费 Llama 模型后，下一回合的日志', caption: '也可以只为一个会话换模型，下一回合立即生效，Agent 本身不受影响。' },
+        { type: 'h3', text: '还做了什么' },
+        { type: 'ul', items: [
+          '触发器：webhook、Slack 和飞书机器人、cron 定时、事件订阅、SQS、Kafka，每次投递都有一张幂等回执。',
+          '治理：工作区配额（含每日成本硬上限）、只写不读的加密凭据、按角色和单个资源授权、SSO 与 SCIM、防篡改的审计哈希链。',
+          '运行时：本地进程、容器、Kubernetes 三种沙箱；丢了沙箱会在租期内重建并接着对话；任何语言写的 Agent 都能通过桥接协议接入。',
+          '工具链：带类型的 TypeScript SDK、覆盖全部资源的 ma 命令行，以及由同一份 schema 生成的 OpenAPI。',
+        ] },
+      ],
+    },
+    {
       id: 'personal-space',
       name: 'Personal Space',
       subtitle: '一个持续生长的个人空间',
@@ -1878,6 +1913,12 @@ window.SITE_CONTENT = {
       ],
     },
   ],
+  music: {
+    tracks: [
+      { title: 'Cornfield Chase', artist: 'Hans Zimmer', file: './audio/cornfield-chase.mp3' },
+      { title: 'No Time for Caution', artist: 'Hans Zimmer', file: './audio/no-time-for-caution.mp3' },
+    ],
+  },
   comments: {
     provider: 'giscus',
     site: 'https://ai-loren.github.io/personal-homepage/',

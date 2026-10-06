@@ -28,9 +28,11 @@ const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
   '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.ttf': 'font/ttf',
-  '.woff2': 'font/woff2', '.csv': 'text/csv; charset=utf-8',
+  '.woff2': 'font/woff2', '.csv': 'text/csv; charset=utf-8', '.mp3': 'audio/mpeg',
 };
 const DATASET_PATH = /^\.\/data\/lab\/[a-z0-9-]+\/[a-z0-9_-]+\.csv$/;
+const PROJECT_IMAGE_PATH = /^\.\/assets\/projects\/[a-z0-9-]+\/[a-z0-9_-]+\.(png|webp|jpe?g)$/;
+const TRACK_PATH = /^\.\/audio\/[a-z0-9-]+\.mp3$/;
 
 async function readSourceFile(root, name) {
   const sourceRoot = await realpath(root);
@@ -100,6 +102,15 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
       paths.add(entry.logo.slice(2));
     }
   }
+  for (const project of content.projects || []) {
+    const images = [project.image, ...(project.body || []).filter((block) => block.type === 'image')].filter(Boolean);
+    for (const image of images) {
+      if (!PROJECT_IMAGE_PATH.test(image.src)) {
+        throw new Error(`Image of project ${project.id} expects ./assets/projects/<project>/<name>.(png|webp|jpg|jpeg) (lowercase, no traversal); got ${image.src}. Move the file there and update content.js.`);
+      }
+      paths.add(image.src.slice(2));
+    }
+  }
   const datasets = new Set();
   for (const experiment of content.experiments || []) {
     for (const dataset of experiment.datasets || []) {
@@ -110,6 +121,20 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
       datasets.add(dataset.file.slice(2));
     }
   }
+  const tracks = [];
+  for (const track of content.music?.tracks || []) {
+    if (!TRACK_PATH.test(track.file)) {
+      throw new Error(`Music track "${track.title}" expects ./audio/<name>.mp3 (lowercase, no traversal); got ${track.file}. Move the file there and update content.js.`);
+    }
+    // 音频受版权保护时不进仓库（.gitignore），CI 里就会缺文件：此时只发布有文件的曲目，全缺则前端隐藏音乐控件。
+    const bytes = await readSourceFile(root, track.file.slice(2)).catch((error) => {
+      if (error.code === 'ENOENT') return null;
+      throw error;
+    });
+    if (bytes) tracks.push([track, bytes]);
+    else console.warn(`Music track ${track.file} is not on disk; publishing without it.`);
+  }
+  if (content.music) content.music.tracks = tracks.map(([track]) => track);
   const files = new Map(await Promise.all([...paths].map(async (name) => {
     try {
       return [name, await readSourceFile(root, name)];
@@ -120,6 +145,7 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
       throw error;
     }
   })));
+  for (const [track, bytes] of tracks) files.set(track.file.slice(2), bytes);
   files.set('content.js', Buffer.from(`window.SITE_CONTENT = ${JSON.stringify(content, null, 2)};\n`));
   assertNoPrivateCareer(files, source, content);
   return files;
@@ -173,9 +199,25 @@ export function createPreviewServer(files) {
       response.end(request.method === 'HEAD' ? undefined : 'Not found');
       return;
     }
+    const type = CONTENT_TYPES[extname(name)] || 'application/octet-stream';
+    // Safari 只在服务器支持 Range 时播放音频；只处理单段 bytes=start-end，其余按整文件返回。
+    const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range || '');
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, buffer.length - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), buffer.length - 1) : buffer.length - 1;
+      if (start > end || start >= buffer.length) {
+        response.writeHead(416, { 'Content-Range': `bytes */${buffer.length}` });
+        response.end();
+        return;
+      }
+      response.writeHead(206, { 'Content-Type': type, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${buffer.length}`, 'Accept-Ranges': 'bytes' });
+      response.end(request.method === 'HEAD' ? undefined : buffer.subarray(start, end + 1));
+      return;
+    }
     response.writeHead(200, {
-      'Content-Type': CONTENT_TYPES[extname(name)] || 'application/octet-stream',
+      'Content-Type': type,
       'Content-Length': buffer.length,
+      'Accept-Ranges': 'bytes',
     });
     response.end(request.method === 'HEAD' ? undefined : buffer);
   });
