@@ -751,6 +751,13 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(6px); }
 .reader-topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 24px; background: var(--bg); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
 .reader-topbar > span { font-family: var(--mono); letter-spacing: 1.7px; font-size: 9px; color: var(--muted); }
 .reader-topbar .icon-button { border: 0; }
+.reader-actions { display: flex; align-items: center; gap: 10px; }
+.reader-language { display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--faint); font-family: var(--mono); font-size: 10px; letter-spacing: 1px; cursor: pointer; }
+.reader-language[hidden] { display: none; }
+.reader-language span { padding: 4px 10px; border-radius: 999px; transition: background .2s, color .2s; }
+.reader-language[data-active="zh"] [data-language="zh"], .reader-language[data-active="en"] [data-language="en"] { background: var(--surface-hover); color: var(--text); }
+.reader-language:hover { border-color: var(--faint); }
+.reader-language:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .reader-content { padding: 40px 54px 50px; }
 .reader-content > h2 { font-family: var(--han-display); font-size: 34px; font-weight: 500; line-height: 1.55; letter-spacing: .01em; margin: 18px 0 25px; }
 .reader-body p { font-size: 15px; color: var(--muted); line-height: 2; margin: 17px 0; white-space: pre-line; }

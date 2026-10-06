@@ -127,7 +127,7 @@ test('dataset paths outside data/lab and missing dataset files stop publication'
 
 test('every project image is published, and unsafe project image paths stop publication', async (t) => {
   const files = await createPublicFiles();
-  const images = source.projects.flatMap((project) => [project.image, ...(project.body || []).filter((block) => block.type === 'image')]).filter(Boolean);
+  const images = source.projects.flatMap((project) => [project.image, ...[project, ...Object.values(project.translations || {})].flatMap((version) => (version.body || []).filter((block) => block.type === 'image'))]).filter(Boolean);
   assert(source.projects.some((project) => project.image), 'a card image must be among the checked images');
   assert(source.projects.some((project) => (project.body || []).some((block) => block.type === 'image')), 'a body image must be among the checked images');
   for (const image of images) assert(files.has(image.src.slice(2)), `${image.src} must be published`);
@@ -142,14 +142,32 @@ test('every project image is published, and unsafe project image paths stop publ
     const poisoned = structuredClone(source);
     const project = poisoned.projects.find((entry) => entry.image);
     if (place === 'card') project.image = { src, alt: '' };
-    else project.body = [{ type: 'image', src, alt: '' }];
+    else if (place === 'body') project.body = [{ type: 'image', src, alt: '' }];
+    else project.translations = { en: { body: [{ type: 'image', src, alt: '' }] } };
     await writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(poisoned)};`);
     return createPublicFiles({ root });
   };
-  for (const place of ['card', 'body']) {
+  for (const place of ['card', 'body', 'translation']) {
     for (const src of ['./assets/projects/../../site.config.mjs', './assets/projects/demo/Shot.png', './assets/projects/demo/shot.gif', 'assets/projects/demo/shot.png', './assets/shot.png']) {
       await assert.rejects(poison(place, src), /expects \.\/assets\/projects\/<project>\/<name>/, `${place} ${src}`);
     }
+  }
+});
+
+test('a bilingual project keeps both languages in step: same blocks, same images, translated meta', () => {
+  const bilingual = source.projects.filter((project) => project.translations);
+  assert(bilingual.length > 0, 'at least one project must carry a translation for this check to mean anything');
+  for (const project of bilingual) {
+    assert.deepEqual(Object.keys(project.translations), ['en'], `${project.id}: the reader only switches between Chinese and English`);
+    const english = project.translations.en;
+    for (const key of ['subtitle', 'status']) {
+      assert(english[key] && english[key] !== project[key], `${project.id}: translations.en.${key} must be its own English text`);
+    }
+    const shape = (body) => body.map((block) => (block.type === 'image' ? `image:${block.src}` : block.type === 'ul' ? `ul:${block.items.length}` : block.type));
+    assert.deepEqual(shape(english.body), shape(project.body), `${project.id}: the English body must follow the Chinese one block for block`);
+    const texts = (body) => body.flatMap((block) => [block.text, block.alt, block.caption, ...(block.items || [])]).filter(Boolean);
+    const chinese = texts(english.body).filter((text) => /[\u4e00-\u9fff]/.test(text));
+    assert.deepEqual(chinese, [], `${project.id}: the English body must not contain Chinese text`);
   }
 });
 

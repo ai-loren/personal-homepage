@@ -103,7 +103,8 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
     }
   }
   for (const project of content.projects || []) {
-    const images = [project.image, ...(project.body || []).filter((block) => block.type === 'image')].filter(Boolean);
+    const versions = [project, ...Object.values(project.translations || {})];
+    const images = [project.image, ...versions.flatMap((version) => (version.body || []).filter((block) => block.type === 'image'))].filter(Boolean);
     for (const image of images) {
       if (!PROJECT_IMAGE_PATH.test(image.src)) {
         throw new Error(`Image of project ${project.id} expects ./assets/projects/<project>/<name>.(png|webp|jpg|jpeg) (lowercase, no traversal); got ${image.src}. Move the file there and update content.js.`);

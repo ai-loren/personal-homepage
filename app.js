@@ -62,6 +62,7 @@
   const contact = $('#contact-dialog');
   let activeView = 'home';
   let activeDetail = null;
+  let readerLanguage = 'zh';
   let articleCategory = '全部';
   const articlePageSizes = [6, 10, 20];
   let articlePageSize = 10;
@@ -845,8 +846,16 @@
     document.body.classList.toggle('modal-open', reader.open || contact.open);
   }
 
-  function renderDetail(item, page) {
+  function renderDetail(source, page) {
     unmountReplies();
+    const bilingual = page === 'projects' && Boolean(source.translations?.en);
+    const english = bilingual && readerLanguage === 'en';
+    const item = english ? { ...source, ...source.translations.en } : source;
+    const languageToggle = $('#reader-language');
+    languageToggle.hidden = !bilingual;
+    languageToggle.dataset.active = english ? 'en' : 'zh';
+    languageToggle.setAttribute('aria-label', english ? '切换为中文' : 'Switch to English');
+    $('.reader-content').lang = english ? 'en' : 'zh-CN';
     $('#reader-kind').textContent = { writing: 'READING ROOM', projects: 'PROJECT NOTES', lab: 'EXPERIMENT LOG', ideas: 'OPEN QUESTION' }[page];
     $('#reader-title').textContent = item.title || item.name;
     $('#reader-meta').textContent = {
@@ -862,11 +871,11 @@
         <p class="replies-note">登录 GitHub 后即可写下你的答案。回复保存在本站仓库的 GitHub Discussions 里，可以编辑或删除。</p>
         <div class="question-replies" id="question-replies"></div>`,
     }[page]?.() ?? renderBody(item.body);
-    const links = page === 'projects' ? [{ text: '访问项目 ↗', url: safeURL(item.url) }, { text: '查看源码 ↗', url: safeURL(item.source) }] : [];
+    const links = page === 'projects' ? [{ text: english ? 'Visit project ↗' : '访问项目 ↗', url: safeURL(item.url) }, { text: english ? 'View source ↗' : '查看源码 ↗', url: safeURL(item.source) }] : [];
     $('#reader-links').innerHTML = links.filter((link) => link.url).map((link) =>
       `<a class="button" href="${escapeHTML(link.url)}" target="_blank" rel="noopener noreferrer">${link.text}</a>`
     ).join('');
-    activeDetail = { page, hash: location.hash };
+    activeDetail = { page, hash: location.hash, item: source };
     if (page === 'ideas') mountReplies(item);
     document.title = profile.siteTitle;
     if (contact.open) contact.close();
@@ -915,6 +924,11 @@
   }
 
   $('#reader-close').addEventListener('click', () => reader.close());
+  $('#reader-language').addEventListener('click', () => {
+    if (!activeDetail?.item) return;
+    readerLanguage = readerLanguage === 'en' ? 'zh' : 'en';
+    renderDetail(activeDetail.item, activeDetail.page);
+  });
   $('#reader-body').addEventListener('click', (event) => {
     const jump = event.target.closest('[data-jump]');
     if (!jump) return;
