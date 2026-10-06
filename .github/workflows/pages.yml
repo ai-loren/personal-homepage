@@ -31,7 +31,7 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - name: Test publication boundaries
-        run: node --test scripts/site.test.mjs
+        run: node --test scripts/site.test.mjs scripts/vram-ledger.test.mjs
       - name: Build public site
         run: node scripts/site.mjs build
       - name: Upload public files only

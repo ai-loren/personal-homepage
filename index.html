@@ -9,10 +9,11 @@
     <title>Loren's Galaxy</title>
     <link rel="icon" type="image/png" sizes="128x128" href="./assets/lorens-saturn-favicon.png?v=20260921-1">
     <link rel="preload" href="./vendor/fonts/noto-serif-sc-subset.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="./styles.css?v=20261006-notice">
+    <link rel="stylesheet" href="./styles.css?v=20261007-ledger2">
     <script src="./vendor/three.min.js" defer></script>
-    <script src="./content.js?v=20261006-music" defer></script>
-    <script src="./app.js?v=20261006-notice" defer></script>
+    <script src="./content.js?v=20261007-ledger3" defer></script>
+    <script src="./tools/vram-ledger.js?v=20261007-ledger3" defer></script>
+    <script src="./app.js?v=20261007-ledger" defer></script>
     <script src="./globe-renderer.js" defer></script>
     <script src="./cosmos.js?v=20260922-17" defer></script>
     <script src="./solar-system-3d.js?v=20261005-title" defer></script>
@@ -231,8 +232,10 @@
         </section>
 
         <section class="view content-view" data-view="projects" aria-labelledby="projects-title" hidden>
-          <header class="page-heading"><p class="eyebrow">THINGS I MAKE</p><h1 id="projects-title">作品<span class="title-period">.</span></h1><p>一些出于好奇心的尝试，一些认真解决小问题的工具。</p></header>
-          <div class="list-toolbar"><div class="filter-group" aria-label="项目分类" id="project-filters"></div><span class="muted-note" id="project-count"></span></div>
+          <div class="projects-intro">
+            <header class="page-heading"><p class="eyebrow">THINGS I MAKE</p><h1 id="projects-title">作品<span class="title-period">.</span></h1><p>一些出于好奇心的尝试，一些认真解决小问题的工具。</p></header>
+            <div class="list-toolbar project-toolbar"><div class="project-facets" aria-label="作品筛选" id="project-filters"></div><span class="muted-note" id="project-count"></span></div>
+          </div>
           <div class="project-grid" id="project-list"></div>
           <p class="page-endnote">从一个小想法开始，做到能被打开。<span data-demo-label>当前项目为演示内容</span></p>
         </section>
@@ -275,6 +278,7 @@
           <div class="ideas-list" id="ideas-list"></div>
           <p class="page-endnote">好的问题，比答案活得更久。</p>
         </section>
+        <section class="view content-view detail-page" id="detail-page" data-view="detail" aria-labelledby="reader-title" hidden></section>
       </main>
 
       <footer class="site-footer" id="contact">
@@ -285,8 +289,10 @@
     </div>
 
     <dialog class="reader-dialog" id="reader-dialog" aria-labelledby="reader-title">
-      <div class="reader-topbar"><span id="reader-kind">READING ROOM</span><div class="reader-actions"><button class="reader-language" id="reader-language" type="button" hidden><span data-language="zh">中文</span><span data-language="en">EN</span></button><button class="icon-button" id="reader-close" type="button" aria-label="关闭阅读窗口"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div></div>
+      <div class="reader-shell" id="reader-shell">
+      <div class="reader-topbar"><div class="reader-heading"><button class="reader-back" id="reader-back" type="button" hidden>← 返回</button><span id="reader-kind">READING ROOM</span></div><div class="reader-actions"><div class="reader-mode" id="reader-mode" role="group" aria-label="详情展示方式"><button type="button" data-mode="overlay" aria-pressed="true" title="在浮层中阅读">浮层</button><button type="button" data-mode="page" aria-pressed="false" title="在整页中阅读">整页</button></div><button class="reader-language" id="reader-language" type="button" hidden><span data-language="zh">中文</span><span data-language="en">EN</span></button><button class="icon-button" id="reader-close" type="button" aria-label="关闭阅读窗口"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div></div>
       <article class="reader-content"><p class="eyebrow" id="reader-meta"></p><h2 id="reader-title"></h2><div class="reader-body" id="reader-body"></div><div id="reader-links"></div></article>
+      </div>
     </dialog>
     <dialog class="contact-dialog" id="contact-dialog" aria-labelledby="contact-title">
       <button class="icon-button contact-close" id="contact-close" type="button" aria-label="关闭联系方式"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button>

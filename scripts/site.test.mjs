@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import { CAREER_VISIBILITY } from '../site.config.mjs';
-import { PROJECT_ROOT, createPreviewServer, createPublicFiles, readSourceContent, selectPublicContent, writePublicFiles } from './site.mjs';
+import { PROJECT_ROOT, assertProjectFacets, createPreviewServer, createPublicFiles, readSourceContent, selectPublicContent, writePublicFiles } from './site.mjs';
 
 const source = await readSourceContent();
 const decodeContent = (files) => {
@@ -160,7 +160,7 @@ test('a bilingual project keeps both languages in step: same blocks, same images
   for (const project of bilingual) {
     assert.deepEqual(Object.keys(project.translations), ['en'], `${project.id}: the reader only switches between Chinese and English`);
     const english = project.translations.en;
-    for (const key of ['subtitle', 'status', ...(project.tagline ? ['tagline'] : [])]) {
+    for (const key of ['subtitle', ...(project.status ? ['status'] : []), ...(project.tagline ? ['tagline'] : [])]) {
       assert(english[key] && english[key] !== project[key], `${project.id}: translations.en.${key} must be its own English text`);
     }
     const shape = (body) => body.map((block) => (block.type === 'image' ? `image:${block.src}` : block.type === 'ul' ? `ul:${block.items.length}` : block.type));
@@ -169,6 +169,66 @@ test('a bilingual project keeps both languages in step: same blocks, same images
     const chinese = texts(english.body).filter((text) => /[\u4e00-\u9fff]/.test(text));
     assert.deepEqual(chinese, [], `${project.id}: the English body must not contain Chinese text`);
   }
+});
+
+test('project filter values come only from projectFacets, and a stray value stops publication', async (t) => {
+  assert.deepEqual(source.projectFacets.map((facet) => [facet.key, Boolean(facet.multiple)]), [['type', false], ['uses', true], ['code', false]]);
+  assert.doesNotThrow(() => assertProjectFacets(source));
+  const withProject = (patch) => {
+    const content = structuredClone(source);
+    Object.assign(content.projects[0], patch);
+    return content;
+  };
+  assert.doesNotThrow(() => assertProjectFacets(withProject({ uses: ['SDK', 'Web'] })), 'the order a project lists its uses in is not significant');
+  const id = source.projects[0].id;
+  for (const [patch, field] of [
+    [{ type: '应用 ' }, 'type'], [{ type: undefined }, 'type'], [{ code: '未公开' }, 'code'],
+    [{ uses: ['Cli'] }, 'uses'], [{ uses: 'Web' }, 'uses'], [{ uses: [] }, 'uses'], [{ uses: ['Web', 'Web'] }, 'uses'],
+  ]) {
+    assert.throws(() => assertProjectFacets(withProject(patch)), new RegExp(`Project ${id} expects ${field} .*add it to projectFacets "${field}"`), JSON.stringify(patch));
+  }
+  const withFacets = (edit) => {
+    const content = structuredClone(source);
+    edit(content.projectFacets);
+    return content;
+  };
+  assert.throws(() => assertProjectFacets(withFacets((facets) => facets.push(structuredClone(facets[0])))), /list each filter dimension once/);
+  assert.throws(() => assertProjectFacets(withFacets((facets) => facets[0].values.push({ value: facets[0].values[0].value }))), /unique non-empty values/);
+  assert.throws(() => assertProjectFacets(withFacets((facets) => { facets[2].key = 'Code'; })), /key: lowercase letters/);
+
+  const root = await temporaryDirectory(t);
+  for (const [name, bytes] of await createPublicFiles()) {
+    if (name === 'content.js') continue;
+    const target = join(root, name);
+    await mkdir(join(target, '..'), { recursive: true });
+    await writeFile(target, bytes);
+  }
+  await writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(withProject({ type: '网站' }))};`);
+  await assert.rejects(createPublicFiles({ root }), new RegExp(`Project ${id} expects type to be one of 平台 / 框架 / 应用 / 工具; got "网站"`));
+});
+
+test('every embedded tool is published and loads before app.js, and an unknown tool id stops publication', async (t) => {
+  const files = await createPublicFiles();
+  const html = files.get('index.html').toString();
+  const tools = [...files.keys()].filter((name) => name.startsWith('tools/'));
+  assert.deepEqual(tools, ['tools/vram-ledger.js']);
+  for (const name of tools) {
+    const at = html.indexOf(`src="./${name}?`);
+    assert(at > 0 && at < html.indexOf('src="./app.js'), `${name} must be loaded by index.html before app.js mounts it`);
+  }
+  assert.deepEqual(source.projects.flatMap((project) => (project.body || []).filter((block) => block.type === 'tool').map((block) => block.tool)), ['vram-ledger']);
+
+  const root = await temporaryDirectory(t);
+  for (const [name, bytes] of files) {
+    if (name === 'content.js') continue;
+    const target = join(root, name);
+    await mkdir(join(target, '..'), { recursive: true });
+    await writeFile(target, bytes);
+  }
+  const poisoned = structuredClone(source);
+  poisoned.projects.find((project) => project.id === 'vram-ledger').body.push({ type: 'tool', tool: 'vram-legder' });
+  await writeFile(join(root, 'content.js'), `window.SITE_CONTENT = ${JSON.stringify(poisoned)};`);
+  await assert.rejects(createPublicFiles({ root }), /Project vram-ledger embeds tool "vram-legder"; expected one of vram-ledger/);
 });
 
 test('published page keeps a strict CSP and no inline script entry points', async () => {

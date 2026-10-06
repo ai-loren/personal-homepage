@@ -14,7 +14,7 @@ const PRIVATE_MARKERS = {
 const OUTPUT_MARKER = 'personal-homepage public output v1\n';
 const PUBLIC_FILES = [
   'index.html', 'styles.css', 'app.js', 'cosmos.js', 'globe-renderer.js',
-  'solar-system-3d.js', 'page-scenes.js', '.nojekyll',
+  'solar-system-3d.js', 'page-scenes.js', 'tools/vram-ledger.js', '.nojekyll',
   'assets/lorens-saturn-favicon.png', 'assets/loren-portrait.webp',
   'assets/xidian-university-emblem.png',
   'vendor/three.min.js', 'vendor/THREE-LICENSE.txt',
@@ -89,9 +89,38 @@ function assertNoPrivateCareer(files, source, publicContent) {
   }
 }
 
+// 筛选按钮由数据生成，拼错一个值（'应用 '、'Cli'）就会多出一个只含一个作品的按钮，所以取值必须来自 projectFacets。
+export function assertProjectFacets(content) {
+  const facets = content.projectFacets || [];
+  const keys = facets.map((facet) => facet.key);
+  if (!facets.length || new Set(keys).size !== keys.length) {
+    throw new Error(`content.js expects projectFacets to list each filter dimension once; got keys ${JSON.stringify(keys)}. Declare type, uses and code (or your own dimensions) with unique keys.`);
+  }
+  for (const facet of facets) {
+    const values = (facet.values || []).map((entry) => entry.value);
+    if (!/^[a-z]+$/.test(facet.key || '') || !facet.label || !values.length || values.some((value) => typeof value !== 'string' || !value.trim()) || new Set(values).size !== values.length) {
+      throw new Error(`content.js projectFacets entry expects { key: lowercase letters, label, values: [{ value, en? }, ...] } with unique non-empty values; got ${JSON.stringify(facet)}. Fix that entry.`);
+    }
+  }
+  for (const project of content.projects || []) {
+    for (const facet of facets) {
+      const allowed = facet.values.map((entry) => entry.value);
+      const got = project[facet.key];
+      const valid = facet.multiple
+        ? Array.isArray(got) && got.length > 0 && new Set(got).size === got.length && got.every((value) => allowed.includes(value))
+        : allowed.includes(got);
+      if (!valid) {
+        const shape = facet.multiple ? `a non-empty list without repeats drawn from ${allowed.join(' / ')}` : `one of ${allowed.join(' / ')}`;
+        throw new Error(`Project ${project.id} expects ${facet.key} to be ${shape}; got ${JSON.stringify(got)}. Use a declared value, or add it to projectFacets "${facet.key}" in content.js.`);
+      }
+    }
+  }
+}
+
 export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root = PROJECT_ROOT } = {}) {
   const source = await readSourceContent(root);
   const content = selectPublicContent(source, visibility);
+  assertProjectFacets(content);
   const paths = new Set(PUBLIC_FILES);
   for (const company of content.experience) {
     for (const entry of [company, ...company.roles]) {
@@ -102,8 +131,14 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
       paths.add(entry.logo.slice(2));
     }
   }
+  const toolIds = PUBLIC_FILES.filter((name) => name.startsWith('tools/')).map((name) => name.slice(6, -3));
   for (const project of content.projects || []) {
     const versions = [project, ...Object.values(project.translations || {})];
+    for (const block of versions.flatMap((version) => version.body || []).filter((block) => block.type === 'tool')) {
+      if (!toolIds.includes(block.tool)) {
+        throw new Error(`Project ${project.id} embeds tool ${JSON.stringify(block.tool)}; expected one of ${toolIds.join(', ')}. Fix the id, or add tools/<id>.js to PUBLIC_FILES and a <script> tag for it in index.html.`);
+      }
+    }
     const images = [project.image, ...versions.flatMap((version) => (version.body || []).filter((block) => block.type === 'image'))].filter(Boolean);
     for (const image of images) {
       if (!PROJECT_IMAGE_PATH.test(image.src)) {

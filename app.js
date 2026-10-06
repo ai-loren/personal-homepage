@@ -12,6 +12,7 @@
     library,
     articles,
     projects,
+    projectFacets = [],
     ideas,
     comments = {},
     music = {},
@@ -67,7 +68,7 @@
   const articlePageSizes = [6, 10, 20];
   let articlePageSize = 10;
   let articlePage = 1;
-  let projectCategory = '全部';
+  const projectFilter = Object.fromEntries(projectFacets.map((facet) => [facet.key, '全部']));
   let toastTimer;
   const mobileViewport = matchMedia('(max-width: 760px)');
 
@@ -493,6 +494,7 @@
   const artworks = {
     browser: '<div class="mini-browser"><div class="browser-dots"><i></i><i></i><i></i></div><strong>Hello, world.</strong><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-pill"></div></div>',
     timer: '<div class="focus-dial"><strong>25:00</strong><span>ONE THING</span></div>',
+    ledger: '<div class="ledger-art"><strong>60.2<small> / 80 GiB</small></strong><div class="ledger-bar"><i></i><i></i><i></i><i></i><b></b></div><span>PARAMS · GRADS · OPTIM · ACTS</span></div>',
     notes: '<div class="note-stack"><div class="mini-note"><span>A little thought.</span><div class="mini-line"></div><div class="mini-line short"></div></div></div>',
     terminal: '<div class="tiny-terminal"><span>~ / tiny-scripts</span><br>$ make life easier<br>one small step at a time<span> _</span></div>',
   };
@@ -501,14 +503,48 @@
     ? ` <span class="project-tagline">${escapeHTML(project.tagline)}</span>`
     : ''}`;
 
+  // multiple 维度的值按 projectFacets 里声明的顺序取，不按作品里写的顺序，卡片之间的标记顺序才一致。
+  const facetValues = (project, facet) => facet.values.map((entry) => entry.value).filter((value) => [].concat(project[facet.key] ?? []).includes(value));
+  const matchesProjectFilter = (project, override = {}) => projectFacets.every((facet) => {
+    const selected = override[facet.key] ?? projectFilter[facet.key];
+    return selected === '全部' || facetValues(project, facet).includes(selected);
+  });
+  const facetText = (project, facet, english) => facetValues(project, facet)
+    .map((value) => (english && facet.values.find((entry) => entry.value === value).en) || value)
+    .join(' · ');
+
+  // 各排同时生效。会让结果变空的选项被禁用，于是怎么点都不会点出一个空列表；只有一个取值的维度整排不显示。
+  function renderProjectFilters() {
+    $('#project-filters').innerHTML = projectFacets.map((facet) => {
+      const present = facet.values.map((entry) => entry.value).filter((value) => projects.some((project) => facetValues(project, facet).includes(value)));
+      if (present.length < 2) return '';
+      return `<div class="facet-row" role="group" aria-labelledby="facet-${escapeHTML(facet.key)}"><span class="facet-label" id="facet-${escapeHTML(facet.key)}">${escapeHTML(facet.label)}</span><div class="filter-group">${
+        ['全部', ...present].map((value) => `<button type="button" class="filter-button" data-facet="${escapeHTML(facet.key)}" data-value="${escapeHTML(value)}">${escapeHTML(value)}</button>`).join('')
+      }</div></div>`;
+    }).join('');
+    syncProjectFilters();
+  }
+
+  function syncProjectFilters() {
+    $$('#project-filters [data-facet]').forEach((button) => {
+      const { facet, value } = button.dataset;
+      const selected = projectFilter[facet] === value;
+      button.setAttribute('aria-pressed', String(selected));
+      button.disabled = !selected && value !== '全部' && !projects.some((project) => matchesProjectFilter(project, { [facet]: value }));
+    });
+  }
+
   function renderProjects() {
-    const matching = projects.filter((project) => projectCategory === '全部' || project.category === projectCategory);
+    const matching = projects.filter((project) => matchesProjectFilter(project));
+    const label = (project) => projectFacets.filter((facet) => !facet.multiple).map((facet) => facetText(project, facet)).join(' / ');
+    const marks = (project) => projectFacets.filter((facet) => facet.multiple).flatMap((facet) => facetValues(project, facet))
+      .map((value) => `<span class="item-tag facet-tag">${escapeHTML(value)}</span>`).join('');
     $('#project-count').textContent = `${matching.length} 个作品`;
     $('#project-list').innerHTML = matching.map((project) => `
       <a class="project-card" href="${detailHref('projects', project.id)}">
-        <div class="project-visual" aria-hidden="true"><span class="project-label">${escapeHTML(project.category)} / ${escapeHTML(project.status)}</span>${project.image ? `<img class="project-shot" src="${escapeHTML(project.image.src)}" alt="" loading="lazy">` : artworks[project.artwork] || artworks.browser}</div>
+        <div class="project-visual" aria-hidden="true"><span class="project-label">${escapeHTML(label(project))}</span>${project.image ? `<img class="project-shot" src="${escapeHTML(project.image.src)}" alt="" loading="lazy">` : artworks[project.artwork] || artworks.browser}</div>
         <div class="project-content"><div class="project-heading"><div><h2>${projectTitle(project)}</h2></div><span class="item-arrow" aria-hidden="true">↗</span></div>
-        <p>${escapeHTML(project.description)}</p><div class="item-meta">${project.tags.map((tag) => `<span class="item-tag">${escapeHTML(tag)}</span>`).join('')}<span>${escapeHTML(project.status)}</span></div></div>
+        <p>${escapeHTML(project.description)}</p><div class="item-meta">${marks(project)}${project.tags.map((tag) => `<span class="item-tag">${escapeHTML(tag)}</span>`).join('')}${project.status ? `<span>${escapeHTML(project.status)}</span>` : ''}</div></div>
       </a>`).join('');
     if (!matching.length) $('#project-list').innerHTML = '<p class="empty-state">新的作品正在路上。</p>';
   }
@@ -841,6 +877,11 @@
     return blocks.map((block) => {
       if (block.type === 'ul') return `<ul>${block.items.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>`;
       if (block.type === 'image') return `<figure class="reader-figure"><img src="${escapeHTML(block.src)}" alt="${escapeHTML(block.alt)}" loading="lazy">${block.caption ? `<figcaption>${escapeHTML(block.caption)}</figcaption>` : ''}</figure>`;
+      if (block.type === 'tool') return `<div class="site-tool" data-tool="${escapeHTML(block.tool)}"></div>`;
+      if (block.type === 'links') return `<ul class="reader-refs">${block.items.map((link) => {
+        const url = safeURL(link.url);
+        return `<li>${url ? `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(link.text)} ↗</a>` : escapeHTML(link.text)}</li>`;
+      }).join('')}</ul>`;
       const tag = { p: 'p', h3: 'h3', quote: 'blockquote' }[block.type] || 'p';
       return `<${tag}>${escapeHTML(block.text)}</${tag}>`;
     }).join('');
@@ -865,7 +906,7 @@
     else $('#reader-title').textContent = item.title || item.name;
     $('#reader-meta').textContent = {
       writing: () => `${item.date} / ${item.category} / ${readingTime(item)} 分钟阅读`,
-      projects: () => `${item.subtitle} / ${item.status}`,
+      projects: () => [item.subtitle, ...projectFacets.map((facet) => facetText(item, facet, english)), item.status].filter(Boolean).join(' / '),
       lab: () => `${item.date} / ${item.status} / 模拟数据`,
       ideas: () => `${item.date} / ${item.tags.join(' · ')}`,
     }[page]();
@@ -876,6 +917,11 @@
         <p class="replies-note">登录 GitHub 后即可写下你的答案。回复保存在本站仓库的 GitHub Discussions 里，可以编辑或删除。</p>
         <div class="question-replies" id="question-replies"></div>`,
     }[page]?.() ?? renderBody(item.body);
+    $$('#reader-body [data-tool]').forEach((node) => {
+      const tool = window.SITE_TOOLS?.[node.dataset.tool];
+      if (tool) tool.mount(node);
+      else node.innerHTML = '<p class="tool-missing">这个工具没有加载出来。刷新页面再试一次；如果还是不行，可以用页面底部的联系方式告诉我。</p>';
+    });
     const links = page === 'projects' ? [{ text: english ? 'Visit project ↗' : '访问项目 ↗', url: safeURL(item.url) }, { text: english ? 'View source ↗' : '查看源码 ↗', url: safeURL(item.source) }] : [];
     $('#reader-links').innerHTML = links.filter((link) => link.url).map((link) =>
       `<a class="button" href="${escapeHTML(link.url)}" target="_blank" rel="noopener noreferrer">${link.text}</a>`
@@ -884,9 +930,49 @@
     if (page === 'ideas') mountReplies(item);
     document.title = profile.siteTitle;
     if (contact.open) contact.close();
+    presentDetail(page);
+    syncModalLock();
+  }
+
+  // 两种展示方式共用同一份 #reader-shell，切换时把它整体挪到浮层或页面里，保证 #reader-* 与 #question-replies 只存在一份。
+  const DETAIL_MODE_KEY = 'personal-space-detail-mode';
+  const readerShell = $('#reader-shell');
+  const detailPage = $('#detail-page');
+  let detailMode = 'overlay';
+  try { if (localStorage.getItem(DETAIL_MODE_KEY) === 'page') detailMode = 'page'; } catch {}
+  let skipCloseCleanup = false;
+  let listScroll = null;
+
+  function presentDetail(page) {
+    $$('#reader-mode [data-mode]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mode === detailMode)));
+    const backLabel = `← 返回${pageNames[page]}`;
+    $('#reader-back').textContent = backLabel;
+    $('#reader-back').hidden = detailMode !== 'page';
+    $('#reader-close').hidden = detailMode === 'page';
+    if (detailMode === 'page') {
+      if (reader.open) {
+        skipCloseCleanup = true;
+        reader.close();
+      }
+      if (listScroll === null) listScroll = window.scrollY;
+      if (readerShell.parentElement !== detailPage) detailPage.append(readerShell);
+      $$('[data-view]').forEach((node) => { node.hidden = node !== detailPage; });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
+    detailPage.hidden = true;
+    $(`[data-view="${page}"]`).hidden = false;
+    if (readerShell.parentElement !== reader) reader.append(readerShell);
+    if (listScroll !== null) {
+      window.scrollTo({ top: listScroll, behavior: 'instant' });
+      listScroll = null;
+    }
     if (!reader.open) reader.showModal();
     reader.scrollTop = 0;
-    syncModalLock();
+  }
+
+  function leaveDetailPage() {
+    if (activeDetail) location.hash = `#${activeDetail.page}`;
   }
 
   function route() {
@@ -918,17 +1004,37 @@
     } else {
       activeDetail = null;
       if (reader.open) reader.close();
+      else unmountReplies();
       if (parts[1]) notify('这篇内容暂时找不到，先看看其他内容吧。');
     }
-    if (changed) {
+    if (changed && item && detailMode === 'page') listScroll = 0;
+    if (changed && !(item && detailMode === 'page')) {
       window.scrollTo({ top: 0, behavior: 'instant' });
       if (!item) $('#main').focus({ preventScroll: true });
+      listScroll = null;
+    } else if (!item && listScroll !== null) {
+      window.scrollTo({ top: listScroll, behavior: 'instant' });
+      listScroll = null;
     }
     syncModalLock();
     syncResponsiveState();
   }
 
   $('#reader-close').addEventListener('click', () => reader.close());
+  $('#reader-back').addEventListener('click', leaveDetailPage);
+  $('#reader-mode').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-mode]');
+    if (!button || button.dataset.mode === detailMode) return;
+    detailMode = button.dataset.mode;
+    try { localStorage.setItem(DETAIL_MODE_KEY, detailMode); } catch {}
+    if (activeDetail?.item) renderDetail(activeDetail.item, activeDetail.page);
+    $(`#reader-mode [data-mode="${detailMode}"]`).focus({ preventScroll: true });
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || detailPage.hidden || event.defaultPrevented) return;
+    if (!$('#mobile-nav').hidden || contact.open || !$('#music-panel').hidden) return;
+    leaveDetailPage();
+  });
   $('#reader-language').addEventListener('click', () => {
     if (!activeDetail?.item) return;
     readerLanguage = readerLanguage === 'en' ? 'zh' : 'en';
@@ -941,6 +1047,11 @@
     target?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   });
   reader.addEventListener('close', () => {
+    if (skipCloseCleanup) {
+      skipCloseCleanup = false;
+      syncModalLock();
+      return;
+    }
     unmountReplies();
     if (activeDetail && location.hash === activeDetail.hash) {
       history.replaceState(null, '', `#${activeDetail.page}`);
@@ -1130,8 +1241,12 @@
     articlePage = 1;
     renderArticles();
   });
-  renderFilters('#project-filters', projects.map((project) => project.category), projectCategory, (category) => {
-    projectCategory = category;
+  renderProjectFilters();
+  $('#project-filters').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-facet]');
+    if (!button || button.disabled) return;
+    projectFilter[button.dataset.facet] = button.dataset.value;
+    syncProjectFilters();
     renderProjects();
   });
   $('#writing-search').addEventListener('input', () => {
