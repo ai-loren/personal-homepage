@@ -497,8 +497,8 @@
     terminal: '<div class="tiny-terminal"><span>~ / tiny-scripts</span><br>$ make life easier<br>one small step at a time<span> _</span></div>',
   };
 
-  const projectTitle = (project) => `<span class="project-name">${escapeHTML(project.name)}</span>${project.tagline
-    ? `<span class="visually-hidden">：</span><span class="project-tagline">${escapeHTML(project.tagline)}</span>`
+  const projectTitle = (project) => `<span class="project-name">${escapeHTML(project.name)}${project.tagline ? ':' : ''}</span>${project.tagline
+    ? ` <span class="project-tagline">${escapeHTML(project.tagline)}</span>`
     : ''}`;
 
   function renderProjects() {

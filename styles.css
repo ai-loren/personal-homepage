@@ -523,9 +523,9 @@ p, h1, h2, h3 { margin: 0; overflow-wrap: anywhere; }
 .project-content h2 { font-family: var(--han-display); font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.45; }
 .project-name { color: var(--accent); }
 :root[data-theme="light"] .project-name { color: color-mix(in srgb, var(--accent) 45%, var(--text)); }
-.project-tagline { display: block; margin-top: 4px; font-size: 15px; font-weight: 500; line-height: 1.6; color: var(--text); }
-.reader-content > h2 .project-tagline { margin-top: 6px; font-size: 19px; }
-.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.project-tagline { font-size: 15px; font-weight: 500; color: var(--text); }
+.project-content .project-tagline { white-space: nowrap; }
+.reader-content > h2 .project-tagline { font-size: 19px; }
 .project-content p { color: var(--muted); font-size: 12px; line-height: 1.8; min-height: 43px; }
 .project-content .item-meta { margin-top: 18px; }
 .project-label { position: absolute; top: 16px; left: 18px; font-family: var(--mono); color: var(--faint); letter-spacing: 1px; font-size: 8px; }
