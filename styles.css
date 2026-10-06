@@ -1,9 +1,9 @@
-@font-face { font-family: "Loren Script"; src: url("./vendor/fonts/pinyon-script.ttf") format("truetype"); font-display: swap; font-weight: 400; }
-@font-face { font-family: "Loren Display"; src: url("./vendor/fonts/cormorant-garamond.ttf") format("truetype"); font-display: swap; font-weight: 400 600; }
-@font-face { font-family: "Loren Sans"; src: url("./vendor/fonts/manrope.ttf") format("truetype"); font-display: swap; font-weight: 400 600; }
-@font-face { font-family: "Loren Mono"; src: url("./vendor/fonts/ibm-plex-mono.ttf") format("truetype"); font-display: swap; font-weight: 400 500; }
-@font-face { font-family: "Loren Mono"; src: url("./vendor/fonts/ibm-plex-mono-semibold.ttf") format("truetype"); font-display: swap; font-weight: 600; }
-@font-face { font-family: "Loren Han"; src: url("./vendor/fonts/noto-serif-sc-subset.woff2") format("woff2"); font-display: swap; font-weight: 400 600; }
+@font-face { font-family: "Site Script"; src: url("./vendor/fonts/pinyon-script.ttf") format("truetype"); font-display: swap; font-weight: 400; }
+@font-face { font-family: "Site Display"; src: url("./vendor/fonts/cormorant-garamond.ttf") format("truetype"); font-display: swap; font-weight: 400 600; }
+@font-face { font-family: "Site Sans"; src: url("./vendor/fonts/manrope.ttf") format("truetype"); font-display: swap; font-weight: 400 600; }
+@font-face { font-family: "Site Mono"; src: url("./vendor/fonts/ibm-plex-mono.ttf") format("truetype"); font-display: swap; font-weight: 400 500; }
+@font-face { font-family: "Site Mono"; src: url("./vendor/fonts/ibm-plex-mono-semibold.ttf") format("truetype"); font-display: swap; font-weight: 600; }
+@font-face { font-family: "Site Han"; src: url("./vendor/fonts/noto-serif-sc-subset.woff2") format("woff2"); font-display: swap; font-weight: 400 600; }
 
 :root {
   color-scheme: dark;
@@ -29,12 +29,12 @@
   --nebula: #335b77;
   --star-light: #e8ecf0;
   --emblem-accent: #c8102e;
-  --brand: "Loren Script", "Snell Roundhand", "Segoe Script", cursive;
-  --display: "Loren Display", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --han-display: "Loren Han", "Songti SC", "STSong", serif;
+  --brand: "Site Script", "Snell Roundhand", "Segoe Script", cursive;
+  --display: "Site Display", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --han-display: "Site Han", "Songti SC", "STSong", serif;
   --serif: var(--display);
-  --sans: "Loren Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --mono: "Loren Mono", "SFMono-Regular", Consolas, monospace;
+  --sans: "Site Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: "Site Mono", "SFMono-Regular", Consolas, monospace;
   --chart-accent: var(--accent);
   --chart-baseline: color-mix(in srgb, var(--muted) 80%, transparent);
   font-family: var(--sans);
