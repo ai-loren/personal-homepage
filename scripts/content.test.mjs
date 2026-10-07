@@ -74,7 +74,7 @@ test('every lab experiment ships at least two datasets', () => {
 test('works with screenshots and a bilingual write-up are present', () => {
   assert(source.projects.some((project) => project.image), 'a card image must be among the checked images');
   assert(source.projects.some((project) => (project.body || []).some((block) => block.type === 'image')), 'a body image must be among the checked images');
-  assert.deepEqual(source.projects.filter((project) => project.translations).map((project) => project.id), ['managed-agent']);
+  assert.deepEqual(source.projects.filter((project) => project.translations).map((project) => project.id), ['managed-agent', 'syndica', 'nova']);
 });
 
 test('works are filtered by type, uses and code, and a stray type names the declared values', async (t) => {
