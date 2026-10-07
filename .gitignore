@@ -9,3 +9,4 @@
 artifacts/
 dist/
 *.log
+.playwright-cli/

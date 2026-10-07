@@ -1,10 +1,40 @@
-# Personal Space
+# Loren's Galaxy
 
-一个深色星空风格的个人主页，使用 HTML、CSS 和原生 JavaScript。通过无第三方依赖的 Node.js 构建步骤裁剪公开履历，产物仍是纯静态文件，上线不需要运行时后端。
+[English](README.en.md)
 
-在线效果：[ai-loren.github.io/personal-homepage](https://ai-loren.github.io/personal-homepage/)。这个仓库也是一个模板，可以直接拿来做你自己的主页，步骤见下一节。
+![首页：一套可以点进去的太阳系](docs/readme/home.jpg)
+
+个人主页做成了一套可以飞进去的太阳系。点一颗行星，就进入关于、文字、作品、实验、经历、收藏或问题。作品里有三个能直接用的机器学习基础设施工具：显存账本、checkpoint 间隔计算器、Agent 轨迹回放。几万个个人主页里，这种组合很少见。
+
+A personal site you explore as a solar system, with ML infra tools you can use on the page. [Live site](https://ai-loren.github.io/personal-homepage/) · [English](README.en.md)
+
+![作品页里的显存账本，填入配置立刻重算](docs/readme/vram.jpg)
+
+HTML、CSS 和原生 JavaScript，没有框架，也没有需要安装的依赖。Node.js 构建只负责裁剪公开履历，产物是纯静态文件，上线不需要运行时后端。
+
+## 一键使用
+
+1. 点 [Use this template](https://github.com/ai-loren/personal-homepage/generate)，建一个自己的仓库。
+2. 克隆并打开预览：
+
+```bash
+git clone --recurse-submodules https://github.com/<你的用户名>/<仓库名>.git
+cd <仓库名>
+cp content.example.js content.js
+node scripts/site.mjs serve
+```
+
+终端会打印预览地址，打开就是示例站。然后改三处：`content.js` 换成你的介绍和作品，`site.config.mjs` 里的 `CAREER_VISIBILITY` 改成 `'all'`（或你某家公司的 `id`），删掉用不到的个人素材（头像、校徽、公司 logo、`assets/projects/`、`data/lab/`、`audio/`，以及 `scripts/content.test.mjs`）。`audio/` 里是有版权的音乐，一定要删。
+
+子模块目录如果是空的，再执行一次 `git submodule update --init`。
+
+3. 仓库 **Settings → Pages → Source** 选 **GitHub Actions**。推到 `main` 之后，网址是 `https://<用户名>.github.io/<仓库名>/`。
+
+页脚的「Built with Loren's Galaxy」欢迎留着。字段、回复区和三个小工具的细项在下一节。
 
 ## 用这个模板做你自己的主页
+
+上面的命令能先看到示例站。要发布成你自己的网站，把下面七步做完。
 
 1. **新建仓库**：在 GitHub 上点「Use this template」建一个自己的仓库，再带着子模块克隆：`git clone --recurse-submodules <你的仓库地址>`。
 2. **换成你的内容**：`cp content.example.js content.js`，再按下面「换成自己的内容」一节的字段表逐项改。`content.example.js` 留着，通用测试拿它当固定样本。`index.html` 不用改，名字、介绍、职位等会在构建时按 `content.js` 填好。
@@ -27,10 +57,9 @@
 
 需要 Node.js 20+ 和现代浏览器，不需要 `npm install`。预览入口会先裁剪公开数据，再仅服务允许发布的文件；**不要再从源码根目录运行 `python3 -m http.server`**，否则完整履历、测试文件和 Git 元数据可能被直接读取。
 
-在项目根目录执行（其他机器请替换实际路径）：
+在项目根目录执行：
 
 ```bash
-cd /Users/loren/Documents/loren/personal-homepage
 node scripts/site.mjs serve
 ```
 
@@ -177,3 +206,5 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 ## 许可证
 
 代码采用 [MIT](LICENSE) 许可。`content.js` 里的个人内容、照片、作品截图、实验数据，各公司与学校的商标，以及背景音乐都不在 MIT 范围内；字体、three.js 和三个小工具保留各自的许可。详见 [CONTENT-LICENSE.md](CONTENT-LICENSE.md)。
+
+觉得有用，请给这个仓库点个 [star](https://github.com/ai-loren/personal-homepage/stargazers)。

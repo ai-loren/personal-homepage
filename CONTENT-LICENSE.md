@@ -10,6 +10,7 @@
 - `assets/loren-portrait.webp`：个人照片
 - `assets/projects/`：作品截图
 - `data/lab/`：实验数据集（模拟数据，由 loren 编写）
+- `docs/readme/`：首页和工具截图，里面有个人照片，只用来介绍这个仓库
 
 用这个仓库做模板时，请把它们换成你自己的内容。
 
@@ -29,4 +30,4 @@ MIT 只要求在副本里保留版权声明。如果这个模板帮到了你，�
 
 ---
 
-The MIT License in [LICENSE](LICENSE) covers the code only (HTML, CSS, JavaScript, build and test scripts, and `content.example.js`). loren's personal content (`content.js`, `assets/loren-portrait.webp`, `assets/projects/`, `data/lab/`) is all rights reserved. Company and school logos are trademarks of their owners, and `audio/*.mp3` is copyrighted music that is not licensed for reuse. Fonts, three.js and the three tools keep their own licenses as listed above.
+The MIT License in [LICENSE](LICENSE) covers the code only (HTML, CSS, JavaScript, build and test scripts, and `content.example.js`). loren's personal content (`content.js`, `assets/loren-portrait.webp`, `assets/projects/`, `data/lab/`, and the screenshots in `docs/readme/`) is all rights reserved. Company and school logos are trademarks of their owners, and `audio/*.mp3` is copyrighted music that is not licensed for reuse. Fonts, three.js and the three tools keep their own licenses as listed above.
