@@ -113,7 +113,7 @@ async (page) => {
     await page.locator('#writing-search').fill('苏轼');
     assert(await page.locator('.writing-item').count() > 0, 'Writing search regressed');
     await page.locator('.writing-item').first().click();
-    assert(await page.locator('#reader-dialog').isVisible(), 'Reader did not open');
+    assert(await page.locator('#reader-dialog').waitFor({ state: 'visible', timeout: 5000 }).then(() => true, () => false), 'Reader did not open');
     await page.keyboard.press('Escape');
     assert(await page.locator('#reader-dialog').isHidden(), 'Reader did not close');
     assert(errors.length === 0, `Uncaught errors: ${errors.join('; ')}`);
