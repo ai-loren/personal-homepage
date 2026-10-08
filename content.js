@@ -2069,7 +2069,7 @@ window.SITE_CONTENT = {
       name: 'Nova',
       tagline: 'AI 陪伴系统(Chat方向)',
       subtitle: '稳定身份、连续记忆、一起相处',
-      description: '一个可以长期相处的 AI 伙伴：性格和边界由你定，模型只负责写这一轮的字。',
+      description: '基于 agent-adk 的长期陪伴 Agent：人格与边界固化进系统提示，记忆经用户确认才写入，伙伴身份与底层模型解耦，换模型不换人。',
       type: '应用',
       uses: ['Web'],
       code: '未开源',
