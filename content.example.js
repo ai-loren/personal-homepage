@@ -223,6 +223,7 @@ window.SITE_CONTENT = {
     },
   ],
   music: { tracks: [] },
+  visits: { endpoint: '', since: '' },
   comments: {
     provider: 'giscus',
     site: 'https://your-name.github.io/your-repo/',

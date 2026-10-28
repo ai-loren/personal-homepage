@@ -117,10 +117,25 @@ export function assertProjectFacets(content) {
   }
 }
 
+// 到访计数是可选的外部服务：地址留空就不显示，也不放行任何外部连接。
+function assertVisits(content) {
+  const { endpoint, since } = content.visits || {};
+  if (!endpoint) return;
+  let url = null;
+  try { url = new URL(endpoint); } catch {}
+  if (!url || url.protocol !== 'https:' || url.username || url.password || endpoint.replace(/\/$/, '') !== url.origin) {
+    throw new Error(`content.js visits.endpoint expects the counter's https origin without a path, like "https://galaxy-visits.<account>.workers.dev"; got ${JSON.stringify(endpoint)}. Use the address \`wrangler deploy\` printed, or leave it empty to hide the counter.`);
+  }
+  if (typeof since !== 'string' || !/^\d{4}\.\d{2}\.\d{2}$/.test(since)) {
+    throw new Error(`content.js visits.since expects the first counted day as YYYY.MM.DD, like "2026.10.29"; got ${JSON.stringify(since)}. Set it to the day the counter went live.`);
+  }
+}
+
 export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root = PROJECT_ROOT } = {}) {
   const source = await readSourceContent(root);
   const content = selectPublicContent(source, visibility);
   assertProjectFacets(content);
+  assertVisits(content);
   const paths = new Set(PUBLIC_FILES);
   for (const company of content.experience) {
     for (const entry of [company, ...company.roles]) {
@@ -205,9 +220,10 @@ const RAW_TOKENS = new Set(['intro', 'focus', 'educationMeta']);
 // index.html 里的 {{name}} 等占位与 <!-- if:x -->…<!-- end:x --> 区块在构建时由公开内容填好：
 // 禁用 JavaScript 的访客和搜索引擎看到的首屏，与 app.js 运行后渲染的是同一份资料。
 export function renderIndex(html, content) {
-  const { profile = {}, journey = [], experience = [], articles = [] } = content;
+  const { profile = {}, journey = [], experience = [], articles = [], visits = {} } = content;
   const schooling = journey.filter((entry) => entry.degree && entry.major);
   const emblem = schooling.find((entry) => entry.emblem)?.emblem;
+  const counter = visits.endpoint ? new URL(visits.endpoint).origin : '';
   const values = {
     siteTitle: profile.siteTitle,
     description: profile.description,
@@ -227,8 +243,10 @@ export function renderIndex(html, content) {
     now: profile.now,
     nowNote: profile.nowNote,
     latestTitle: articles[0]?.title,
+    visitsSince: visits.since,
+    visitsConnect: counter ? ` ${counter}` : '',
   };
-  const shown = { portrait: Boolean(profile.portrait), education: schooling.length > 0, emblem: Boolean(emblem), focus: Boolean(profile.focus?.length) };
+  const shown = { portrait: Boolean(profile.portrait), education: schooling.length > 0, emblem: Boolean(emblem), focus: Boolean(profile.focus?.length), visits: Boolean(counter) };
   const innermost = /<!-- if:([a-z]+) -->((?:(?!<!-- if:)[\s\S])*?)<!-- end:\1 -->/g;
   let blocks = html;
   for (let previous = ''; previous !== blocks;) {

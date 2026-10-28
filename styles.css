@@ -461,7 +461,12 @@ p, h1, h2, h3 { margin: 0; overflow-wrap: anywhere; }
   .universe.three-ready .solar-center small { bottom: -36px; }
 }
 
-.home-bottom { display: grid; grid-template-columns: .82fr 1fr; gap: 68px; padding: 31px 0 38px; border-top: 1px solid var(--line); }
+.home-bottom { display: grid; grid-template-columns: .82fr 1fr; gap: 24px 68px; padding: 31px 0 38px; border-top: 1px solid var(--line); }
+.visits-line { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin: 0; font-family: var(--mono); font-size: 10px; letter-spacing: 1.1px; color: var(--muted); }
+.visits-line[data-state="loading"] { visibility: hidden; }
+.visits-since { font-size: 9px; letter-spacing: .6px; color: var(--faint); }
+.visits-stat strong { margin-left: 8px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .4px; color: var(--text); }
+.visits-dot { color: var(--faint); }
 .section-kicker { display: flex; align-items: center; gap: 9px; font-size: 9px; font-weight: 400; letter-spacing: 1.3px; color: var(--muted); line-height: 1.6; }
 .currently-block p { font-family: var(--display); font-weight: 500; font-size: 19px; line-height: 1.4; letter-spacing: .005em; margin: 14px 0 8px; max-width: 560px; }
 .now-clause { display: inline-block; }
@@ -1097,7 +1102,7 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(6px); }
   .hero-actions { gap: 20px; }
   .universe { transform: translateY(10px); }
   .coordinate-bottom { bottom: -5%; }
-  .home-bottom { gap: 45px; }
+  .home-bottom { gap: 24px 45px; }
   .experiment-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
@@ -1153,6 +1158,7 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(6px); }
   .coordinate-bottom { bottom: -5%; font-size: 6px; }
   .orbit-center strong { font-size: 35px; }
   .home-bottom { grid-template-columns: 1fr; gap: 25px; padding: 26px 0 30px; }
+  .visits-since { flex-basis: 100%; }
   .currently-block { padding-bottom: 24px; border-bottom: 1px solid var(--line); }
   .currently-block p { max-width: none; }
   .site-footer { grid-template-columns: 1fr; gap: 20px; padding-top: 26px; }

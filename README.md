@@ -78,7 +78,7 @@ node scripts/site.mjs serve
 
 ## 用这个模板
 
-上面的命令能先看到示例站。要发布成你自己的网站，把下面七步做完。
+上面的命令能先看到示例站。要发布成你自己的网站，把下面八步做完。
 
 1. **新建仓库**。在 GitHub 上点「Use this template」，再带着子模块克隆：`git clone --recurse-submodules <你的仓库地址>`。
 2. **换成你的内容**。`cp content.example.js content.js`，再按 [内容](#内容) 一节的字段表改。`content.example.js` 留着，通用测试拿它当固定样本。`index.html` 不用改，名字、介绍、职位等会在构建时按 `content.js` 填好。
@@ -92,8 +92,9 @@ node scripts/site.mjs serve
 5. **问题页的回复区**。
    - 想开回复：给仓库打开 Discussions、安装 [giscus](https://giscus.app/) 应用，把 giscus 页面给出的 `repoId`、`categoryId` 填进 `content.js` 的 `comments`，再把你网站的地址写进 `giscus.json` 的 `origins`。
    - 暂时不开：`categoryId` 留空即可，问题页会显示「正在接入中」。但 `comments.site` 要改成你自己的网址，并和 `giscus.json` 保持一致，测试会检查。
-6. **本地验证**。`node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs'`，再 `node scripts/site.mjs serve` 打开预览看一遍。
-7. **部署**。仓库 **Settings → Pages → Source** 选 **GitHub Actions**。之后每次推到 `main`，工作流会先测试、再构建，只发布 `dist/`。网址是 `https://<用户名>.github.io/<仓库名>/`。
+6. **到访计数（可选）**。`content.js` 的 `visits.endpoint` 留空，首页就不显示计数，页面也不连任何外部地址。想开就按 [到访计数](#到访计数) 部署你自己的计数服务。
+7. **本地验证**。`node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs' 'worker/*/test/*.test.mjs'`，再 `node scripts/site.mjs serve` 打开预览看一遍。
+8. **部署**。仓库 **Settings → Pages → Source** 选 **GitHub Actions**。之后每次推到 `main`，工作流会先测试、再构建，只发布 `dist/`。网址是 `https://<用户名>.github.io/<仓库名>/`。
 
 页脚的「Built with Loren's Galaxy」链接欢迎保留。代码是 MIT 许可，原作者的个人内容、商标和音乐不在其内，见 [CONTENT-LICENSE.md](CONTENT-LICENSE.md)。
 
@@ -140,6 +141,7 @@ node scripts/site.mjs serve
 | `projectFacets` | 作品筛选的维度与可选值（类型、使用、代码），作品只能用这里声明的值 |
 | `projects` | 项目介绍、筛选维度取值、技术标签及外部链接 |
 | `ideas` | 「问题」栏：还在想的开放问题，按展示顺序排列（栏目 id 仍为 `ideas`） |
+| `visits` | 首页底部的到访计数。`endpoint` 是计数服务的 https 地址，不带路径，留空就不显示；`since` 是开始计数的那天，写成 `YYYY.MM.DD` |
 
 文章与项目的 `body` 支持 `p`（段落）、`h3`（小标题）、`quote`（引用）、`ul`（列表）、`links`（参考链接，`items: [{ text, url }]`；`url` 写成 `#lab/goodput` 这种形式就是站内链接）和 `tool`（站内小工具，`tool: "<工具 id>"`）。正文按纯文本渲染，不解析 HTML 或 Markdown。
 
@@ -172,11 +174,12 @@ node scripts/site.mjs serve
 
 ### 测试
 
-运行 `node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs'`，不需要安装额外依赖。
+运行 `node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs' 'worker/*/test/*.test.mjs'`，不需要安装额外依赖。
 
 - `scripts/site.test.mjs`：通用的发布与安全检查，比如只发布选中的公司、其他公司的信息漏进公开文件就报错、首页占位符转义、路径遍历、私有文件拒绝访问、严格的 CSP。它不依赖某一个人的内容，用 `content.example.js` 当固定样本，换了内容也应该通过。
 - `scripts/content.test.mjs`：只核对本仓库这份内容，比如锁定 Tencent、字节跳动的信息不外泄、三个小工具。用这个仓库做模板时删掉。
 - `scripts/vram-ledger.test.mjs` 和 `tools/*/test/`：三个小工具各自的公式测试。
+- `worker/visits/test/`：到访计数服务。用 Node 自带的 SQLite 执行真实的 SQL，核对新旅人与新到访的判定、总数和明细表始终一致、来源限制和防刷上限。
 
 浏览器回归按本仓库的内容编写，使用固定版本的 Playwright CLI。先保持安全预览服务运行。
 
@@ -197,6 +200,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-co
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/vram-ledger.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/ckpt-goodput.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/agent-trace-replay.js)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/visits.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 ```
 
@@ -233,13 +237,35 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 
 星点会闪烁，鼠标带视差，偶尔有流星。右上角可以暂停。离开首页、滚出屏幕或切到后台标签页时，动画停止。七个栏目各有一幅 Canvas 背景：水星观测网格、月相星图、地球与卫星、火星地貌、航行轨迹、土星档案网格、古星图黑洞。深浅模式各有一套配色。
 
-这些都在本地用 Canvas 和 CSS 画出来，没有外部图片、字体、追踪器或 API 请求。除了主题和动效偏好，不存储访客数据。
+这些都在本地用 Canvas 和 CSS 画出来，没有外部图片、字体或追踪器。页面唯一的外部请求是可选的到访计数，见下一节。
 
 ### 音乐与回复
 
 页头右上角的音符按钮打开面板，可开关背景音乐并调音量。曲目在 `content.js` 的 `music.tracks` 中按顺序循环。进入页面时默认以 50% 音量尝试自动播放。浏览器禁止无手势自动出声时，改为在访客第一次点击、触摸或按键时开始。访客主动关闭后不再自动播放，开关和音量存在 localStorage。当前曲目是受版权保护的电影原声，未取得授权，面板底部有版权声明和联系方式。收到版权方要求时，删除 `audio/` 下的文件并改写 git 历史、强制推送，才能彻底移除。构建时缺文件的曲目会被移出播放列表，全部缺失则隐藏音乐控件。
 
 每个问题点开后有独立回复区，由 giscus（GitHub Discussions）承载。访客登录 GitHub 后回复，按 `question:<问题 id>` 对应讨论帖。回复只以 giscus.app 的跨域 iframe 嵌入，带 sandbox，本站不执行第三方脚本或样式。`index.html` 的 CSP 只放行本站资源与 `frame-src https://giscus.app`，因此页面里不能写内联脚本、事件属性或 style 属性，CSS 变量要用 `element.style.setProperty` 设置。`comments.categoryId` 为空时，回复区只显示「正在接入中」，不加载任何外部内容。`giscus.json` 只放行 `comments.site` 的域名，测试会校验两者一致。在其他域名（含本地预览）打开时，回复区不嵌入 giscus，只给出跳到正式网站同一问题的链接。要在本地测试回复，需临时把本地地址加进 `giscus.json` 的 `origins` 并推送。问题 id 一旦发布不要改，否则旧回复会和问题脱钩。
+
+### 到访计数
+
+首页底部是一行小字：`from 2026.10.29　旅人 / TRAVELERS 1,234 · 到访 / VISITS 5,678`。数字从 `visits.since` 那天开始算，之前的访问没有记录，补不回来。
+
+- **旅人**是一个浏览器，不是一个人。第一次打开页面时，浏览器生成一个随机 ID 存在 localStorage（`personal-space-traveler`），之后每次加载页面带着它上报一次。换浏览器、换设备、清掉本地数据或用无痕窗口，都会算成新旅人。
+- **到访**按会话算。同一个旅人距上一次请求超过 30 分钟再来，才算一次新到访；刷新页面、在站内切换栏目都不算。
+- 计数服务只记 ID、时间、国家/地区和来源站点的域名，不记 IP。为了防刷，同一来源每天最多登记 30 个新旅人；来源是「当天随机盐 + IP」的哈希，盐第二天就删掉。User-Agent 像爬虫或脚本的请求只读总数，不计数。
+- 你自己的浏览器用 `?nocount` 打开一次（例如 `https://ai-loren.github.io/personal-homepage/?nocount`），之后只读总数、不计数；`?count` 恢复。
+- 计数服务挂了或返回的不是数字时，这一行整行隐藏，不会显示成一排横线。
+
+计数服务是 `worker/visits/` 下的 Cloudflare Worker，数据在 D1（Cloudflare 托管的 SQLite）。它不随网站发布。`content.js` 的 `visits.endpoint` 一填，构建就把这个地址加进 CSP 的 `connect-src`，除此之外页面仍然只连本站。部署一次：
+
+```bash
+cd worker/visits
+npx wrangler login
+npx wrangler d1 create galaxy-visits        # 把打印的 database_id 填进 wrangler.toml
+npx wrangler d1 execute galaxy-visits --remote --file schema.sql
+npx wrangler deploy                         # 打印的 https://galaxy-visits.<账号>.workers.dev 填进 content.js 的 visits.endpoint
+```
+
+用模板时，把 `wrangler.toml` 里的 `ALLOWED_ORIGINS` 改成你网站的来源（协议加域名，不带路径），`database_id` 换成你自己的。查明细直接对 D1 跑 SQL，例如 `npx wrangler d1 execute galaxy-visits --remote --command "SELECT country, COUNT(*) FROM visits GROUP BY country"`。
 
 ## 部署
 

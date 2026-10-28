@@ -2341,6 +2341,10 @@ window.SITE_CONTENT = {
       { title: 'No Time for Caution', artist: 'Hans Zimmer', file: './audio/no-time-for-caution.mp3' },
     ],
   },
+  visits: {
+    endpoint: 'https://galaxy-visits.ai-loren.workers.dev',
+    since: '2026.10.29',
+  },
   comments: {
     provider: 'giscus',
     site: 'https://ai-loren.github.io/personal-homepage/',

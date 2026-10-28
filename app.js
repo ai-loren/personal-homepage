@@ -16,6 +16,7 @@
     ideas,
     comments = {},
     music = {},
+    visits = {},
   } = structuredClone(window.SITE_CONTENT);
   const allowedCareerModes = Object.freeze(Object.keys(careerModeNames));
   const careerLocked = allowedCareerModes.length <= 1;
@@ -1235,6 +1236,54 @@
     sync();
   }
   setupMusic();
+
+  // 旅人是浏览器里的一个随机 ID，不是人：换浏览器、清掉本地数据或用无痕窗口都会算成新旅人。
+  // 是否算一次新到访由计数服务按「距上次超过 30 分钟」判断，页面每次加载只报一次。
+  async function setupVisits() {
+    const line = $('#visits-line');
+    if (!line || !visits.endpoint) return;
+    const TRAVELER_KEY = 'personal-space-traveler';
+    const NO_COUNT_KEY = 'personal-space-nocount';
+    let traveler = null;
+    let counting = true;
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.has('nocount')) localStorage.setItem(NO_COUNT_KEY, '1');
+      if (params.has('count')) localStorage.removeItem(NO_COUNT_KEY);
+      counting = localStorage.getItem(NO_COUNT_KEY) !== '1';
+      traveler = localStorage.getItem(TRAVELER_KEY);
+      if (!/^[0-9a-f]{32}$/.test(traveler || '')) {
+        traveler = [...crypto.getRandomValues(new Uint8Array(16))].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem(TRAVELER_KEY, traveler);
+      }
+    } catch {
+      traveler = null;
+    }
+    let referrer = '';
+    try {
+      const from = new URL(document.referrer);
+      if (from.host !== location.host) referrer = from.host;
+    } catch {}
+    const endpoint = visits.endpoint.replace(/\/$/, '');
+    const options = { credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' };
+    try {
+      // 不带 Content-Type 的字符串 body 是 text/plain，属于简单请求，省掉一次 CORS 预检。
+      const response = counting && traveler
+        ? await fetch(`${endpoint}/visit`, { ...options, method: 'POST', body: JSON.stringify({ id: traveler, referrer }) })
+        : await fetch(`${endpoint}/stats`, options);
+      const totals = response.ok ? await response.json() : null;
+      const valid = (value) => Number.isSafeInteger(value) && value >= 0;
+      if (!totals || !valid(totals.travelers) || !valid(totals.visits)) throw new Error(`visit counter answered ${response.status} without numeric totals`);
+      const format = new Intl.NumberFormat('en-US');
+      $('[data-visits="travelers"]').textContent = format.format(totals.travelers);
+      $('[data-visits="visits"]').textContent = format.format(totals.visits);
+      line.dataset.state = 'ready';
+    } catch (error) {
+      console.warn(`Visit counter at ${endpoint} is unavailable, so the line is hidden: ${error.message}`);
+      line.hidden = true;
+    }
+  }
+  setupVisits();
 
   renderFilters('#writing-filters', articles.map((article) => article.category), articleCategory, (category) => {
     articleCategory = category;

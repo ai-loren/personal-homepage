@@ -11,7 +11,8 @@ import { decodeContent, stage, temporaryDirectory, writeContent } from './test-h
 
 const source = await readSourceContent();
 const example = await readSourceContent(PROJECT_ROOT, 'content.example.js');
-const SOURCE_ONLY = /(^|\/)(\.git|\.github|\.harness-e2e|scripts|README\.md|LICENSE|CONTENT-LICENSE\.md|site\.config\.mjs|content\.example\.js|giscus\.json)(\/|$)/;
+const SOURCE_ONLY = /(^|\/)(\.git|\.github|\.harness-e2e|scripts|worker|README\.md|LICENSE|CONTENT-LICENSE\.md|site\.config\.mjs|content\.example\.js|giscus\.json)(\/|$)/;
+const connectSrc = (html) => html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/)[1].split(';').map((part) => part.trim().split(/\s+/)).find(([name]) => name === 'connect-src').slice(1);
 const markersOf = (company) => [...(company.privateMarkers || []), company.company, company.profileRole, ...company.roles.map((role) => role.title)].filter(Boolean);
 const logosOf = (company) => [company.logo, ...company.roles.map((role) => role.logo)].filter(Boolean).map((logo) => logo.slice(2));
 const textOf = (files) => [...files].filter(([name]) => /\.(html|js|css|txt|csv)$/.test(name)).map(([, bytes]) => bytes.toString().toLowerCase()).join('\n');
@@ -257,6 +258,7 @@ test('published page keeps a strict CSP and no inline script entry points', asyn
   assert.deepEqual(policy['script-src'], ["'self'"]);
   assert.deepEqual(policy['style-src'], ["'self'"]);
   assert.deepEqual(policy['frame-src'], ['https://giscus.app']);
+  assert.deepEqual(policy['connect-src'], source.visits?.endpoint ? ["'self'", new URL(source.visits.endpoint).origin] : ["'self'"]);
   assert.deepEqual(policy['object-src'], ["'none'"]);
   assert.deepEqual(policy['base-uri'], ["'none'"]);
   assert.deepEqual(policy['form-action'], ["'none'"]);
@@ -264,6 +266,30 @@ test('published page keeps a strict CSP and no inline script entry points', asyn
   assert(!/<script(?![^>]*\ssrc=)[^>]*>/.test(html), 'index.html must not contain inline <script> blocks');
   assert(!/\son[a-z]+\s*=/i.test(html), 'index.html must not contain inline event handlers');
   assert(!/\sstyle\s*=/.test(html), 'index.html must not contain style attributes (blocked by style-src)');
+});
+
+test('the visit counter is opt-in, and its origin is the only outside address the page may connect to', async (t) => {
+  const root = await stage(t, example);
+  const quiet = (await createPublicFiles({ root, visibility: 'all' })).get('index.html').toString();
+  assert(!quiet.includes('visits-line'), 'an empty endpoint publishes no counter line');
+  assert.deepEqual(connectSrc(quiet), ["'self'"]);
+
+  const counted = structuredClone(example);
+  counted.visits = { endpoint: 'https://galaxy-visits.example.workers.dev/', since: '2026.10.29' };
+  await writeContent(root, counted);
+  const live = (await createPublicFiles({ root, visibility: 'all' })).get('index.html').toString();
+  assert.deepEqual(connectSrc(live), ["'self'", 'https://galaxy-visits.example.workers.dev']);
+  assert.match(live, /<p class="visits-line" id="visits-line" data-state="loading"><span class="visits-since">from 2026\.10\.29<\/span>/);
+  assert.match(live, /<span class="visits-label">旅人 \/ TRAVELERS<\/span><strong data-visits="travelers">—<\/strong>.*<span class="visits-label">到访 \/ VISITS<\/span><strong data-visits="visits">—<\/strong>/);
+
+  for (const endpoint of ['http://galaxy-visits.example.workers.dev', 'https://galaxy-visits.example.workers.dev/visit', 'https://x.example/?a=1', 'https://x.example/#a', 'https://user:pw@x.example', 'galaxy-visits.example.workers.dev', "https://x.example 'unsafe-inline'"]) {
+    await writeContent(root, { ...counted, visits: { endpoint, since: '2026.10.29' } });
+    await assert.rejects(createPublicFiles({ root, visibility: 'all' }), /visits\.endpoint expects the counter's https origin without a path/, endpoint);
+  }
+  for (const since of ['2026-10-29', '2026.10.9', '', undefined, 20261029]) {
+    await writeContent(root, { ...counted, visits: { endpoint: 'https://galaxy-visits.example.workers.dev', since } });
+    await assert.rejects(createPublicFiles({ root, visibility: 'all' }), /visits\.since expects the first counted day as YYYY\.MM\.DD/, String(since));
+  }
 });
 
 test('the footer credits the template with a link to its repository', async () => {

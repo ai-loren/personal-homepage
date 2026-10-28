@@ -1,0 +1,17 @@
+name = "galaxy-visits"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+# 只有这些来源的页面能登记到访；用模板时改成你自己的网站来源（协议 + 域名，不带路径）。
+ALLOWED_ORIGINS = "https://ai-loren.github.io"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "galaxy-visits"
+# `npx wrangler d1 create galaxy-visits` 打印的 database_id 填在这里。
+database_id = "bb14e9fc-7f93-44f1-b1d9-e80ad72e0f11"
+
+[observability]
+enabled = true

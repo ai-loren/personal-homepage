@@ -90,8 +90,9 @@ The footer link, “Built with Loren's Galaxy”, is part of the template. Keepi
 5. **Replies on the questions page.**
    - To turn them on, enable Discussions, install the [giscus](https://giscus.app/) app, put the `repoId` and `categoryId` into `comments` in `content.js`, and put your site URL in `origins` inside `giscus.json`.
    - To leave them off, keep `categoryId` empty. The page shows a notice that replies are not connected yet. `comments.site` still has to be your own URL and has to match `giscus.json`; the tests check that.
-6. **Check it locally.** `node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs'`, then `node scripts/site.mjs serve`.
-7. **Deploy.** **Settings → Pages → Source** must be **GitHub Actions**. Every push to `main` runs the tests, builds, and publishes only `dist/`.
+6. **Visit counter (optional).** Leave `visits.endpoint` in `content.js` empty and the home page shows no counter and connects to nothing outside the site. To turn it on, deploy your own counter as described in [Visit counter](#visit-counter).
+7. **Check it locally.** `node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs' 'worker/*/test/*.test.mjs'`, then `node scripts/site.mjs serve`.
+8. **Deploy.** **Settings → Pages → Source** must be **GitHub Actions**. Every push to `main` runs the tests, builds, and publishes only `dist/`.
 
 ## Run it locally
 
@@ -130,6 +131,7 @@ Edit the source `content.js`, then restart the preview or rebuild. Do not edit `
 | `projectFacets` | Filter rows (type, where it runs, code). A project may only use values declared here |
 | `projects` | Write-up, facet values, tags, and links |
 | `ideas` | Open questions, in display order |
+| `visits` | The counter at the bottom of the home page. `endpoint` is the counter’s https origin without a path; empty hides it. `since` is the first counted day, as `YYYY.MM.DD` |
 
 Article and project bodies accept `p`, `h3`, `quote`, `ul`, `links`, and `tool`. Body text is plain text. `links` items are `{ text, url }`; a url like `#lab/goodput` stays inside the site. A `tool` block is `{ type: 'tool', tool: '<id>' }`.
 
@@ -152,7 +154,7 @@ Company names come from `content.js`. An unknown `id` fails the build and lists 
 
 Publishing `dist/` does not hide the source repository. Visitors can change the page in their own browser; they cannot reconstruct an unpublished job from the files the server sent. If the full history must be unreadable, the source repository has to be private, and old releases and caches have to be dealt with separately.
 
-`node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs'` needs no extra packages. `scripts/site.test.mjs` is the generic publication check and should still pass after you change the content. `scripts/content.test.mjs` locks this repository’s content; delete it when you use the template. The browser scripts under `.harness-e2e/` are written for this content too.
+`node --test 'scripts/*.test.mjs' 'tools/*/test/*.test.mjs' 'worker/*/test/*.test.mjs'` needs no extra packages. `scripts/site.test.mjs` is the generic publication check and should still pass after you change the content. `scripts/content.test.mjs` locks this repository’s content; delete it when you use the template. The browser scripts under `.harness-e2e/` are written for this content too.
 
 ## The site
 
@@ -172,7 +174,29 @@ A `{ type: 'tool', tool: '<id>' }` block mounts `window.SITE_TOOLS['<id>']`. The
 
 The home solar system is a Three.js scene: inclined orbits, depth, spin, orbit, and occlusion, with a little camera parallax as the pointer moves. If Three.js or WebGL is missing, a flat canvas remains. Planet sizes follow real diameters on a compressed scale, and the sun is compressed further so it does not cover the navigation. Hover or keyboard focus enlarges a body, speeds its spin, highlights its orbit, and shows its real diameter.
 
-`cosmos.js` paints the textures in the browser. `globe-renderer.js` lights the Earth and the Moon in WebGL. The continents and the lunar surface are drawn, not photographed. Stars, a meteor, and mouse parallax run on a canvas and pause off the home page, off screen, or in a background tab. Each section has its own canvas ground: a survey grid, a moon chart, Earth and a satellite, Martian terrain, a voyage, Saturn’s archive, an old star map. Light and dark themes each have a palette. Nothing here is an external image, font, tracker, or API. The page stores the theme and the motion preference, and nothing else about a visitor.
+`cosmos.js` paints the textures in the browser. `globe-renderer.js` lights the Earth and the Moon in WebGL. The continents and the lunar surface are drawn, not photographed. Stars, a meteor, and mouse parallax run on a canvas and pause off the home page, off screen, or in a background tab. Each section has its own canvas ground: a survey grid, a moon chart, Earth and a satellite, Martian terrain, a voyage, Saturn’s archive, an old star map. Light and dark themes each have a palette. Nothing here is an external image, font, or tracker. The only outside request the page makes is the optional visit counter below.
+
+### Visit counter
+
+A small line at the bottom of the home page reads `from 2026.10.29　旅人 / TRAVELERS 1,234 · 到访 / VISITS 5,678`. Counting starts on `visits.since`; earlier visits were never recorded and cannot be recovered.
+
+- **A traveler is a browser, not a person.** On the first visit the browser makes a random ID and keeps it in localStorage (`personal-space-traveler`); every page load reports it once. Another browser or device, cleared storage, or a private window counts as a new traveler.
+- **A visit is a session.** The same traveler starts a new visit only after more than 30 minutes without a request. Reloading or moving between sections does not count.
+- The counter stores the ID, the time, the country, and the referring host. It does not store IP addresses. To stop inflation, one source can register at most 30 new travelers a day; the source is a hash of that day’s random salt and the IP, and the salt is deleted the next day. Requests whose User-Agent looks like a crawler or a script read the totals without being counted.
+- Open the site once with `?nocount` in your own browser to stop counting yourself; `?count` turns it back on.
+- If the counter is down or answers without numbers, the whole line is hidden rather than showing dashes.
+
+The counter is a Cloudflare Worker in `worker/visits/`, with its data in D1 (Cloudflare’s hosted SQLite). It is not published with the site. When `visits.endpoint` is set, the build adds that origin to the CSP `connect-src`; the page still connects to nothing else. Deploy it once:
+
+```bash
+cd worker/visits
+npx wrangler login
+npx wrangler d1 create galaxy-visits        # put the printed database_id into wrangler.toml
+npx wrangler d1 execute galaxy-visits --remote --file schema.sql
+npx wrangler deploy                         # put the printed https://galaxy-visits.<account>.workers.dev into visits.endpoint
+```
+
+When you use the template, set `ALLOWED_ORIGINS` in `wrangler.toml` to your site’s origin (scheme and host, no path) and replace `database_id` with your own. Query the details with SQL against D1, for example `npx wrangler d1 execute galaxy-visits --remote --command "SELECT country, COUNT(*) FROM visits GROUP BY country"`.
 
 ## Deploy
 

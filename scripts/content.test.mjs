@@ -98,6 +98,15 @@ test('the three in-site tools are published, embedded once each, and a typo or m
   await assert.rejects(createPublicFiles({ root }), /tools\/ckpt-goodput\/ckpt-goodput\.js is missing: it comes from the git submodule at tools\/ckpt-goodput.*git submodule update --init/);
 });
 
+test('the home page counts travelers from 2026.10.29 through the galaxy-visits worker only', async () => {
+  const html = (await createPublicFiles()).get('index.html').toString();
+  const policy = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/)[1];
+  assert.match(policy, /connect-src 'self' https:\/\/galaxy-visits\.ai-loren\.workers\.dev;/);
+  assert.match(html, /<span class="visits-since">from 2026\.10\.29<\/span>/);
+  const worker = await readFile(new URL('../worker/visits/wrangler.toml', import.meta.url), 'utf8');
+  assert.match(worker, /^ALLOWED_ORIGINS = "https:\/\/ai-loren\.github\.io"$/m, 'the worker must accept the origin the site is served from');
+});
+
 test('all and ByteDance publications still build with their logos', async () => {
   for (const mode of ['all', 'bytedance']) {
     const files = await createPublicFiles({ visibility: mode });

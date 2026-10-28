@@ -10,3 +10,4 @@ artifacts/
 dist/
 *.log
 .playwright-cli/
+.wrangler/
