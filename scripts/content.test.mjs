@@ -63,7 +63,7 @@ test('the home page is filled with loren’s profile', async () => {
   assert.match(html, /<strong class="hero-education-school">西安电子科技大学<\/strong>/);
   assert.match(html, /<span class="hero-education-meta">硕士 · 计算机技术 <i>／<\/i> 本科 · 软件工程<\/span>/);
   assert.match(html, /<dd data-profile="role">Tencent Hunyuan AI Infra Engineer<\/dd>/);
-  assert.equal((html.match(/<ul class="hero-focus"[^>]*>(.*?)<\/ul>/s)[1].match(/<li>/g) || []).length, 4);
+  assert.equal((html.match(/<ul class="hero-focus"[^>]*>(.*?)<\/ul>/s)[1].match(/<li>/g) || []).length, 5);
   assert.match(html, /<span class="coordinate-name">LOREN&#39;S SOLAR SYSTEM<\/span>/);
 });
 
