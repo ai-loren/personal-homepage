@@ -58,7 +58,7 @@ cp content.example.js content.js
 node scripts/site.mjs serve
 ```
 
-The terminal prints a preview URL. That page is the example site. Then change three things: replace the copy in `content.js`, set `CAREER_VISIBILITY` in `site.config.mjs` to `'all'` (or to one company `id` from your content), and delete the original personal files you do not want (`assets/loren-portrait.webp`, the school emblem, company logos, `assets/projects/`, `data/lab/`, `audio/`, and `scripts/content.test.mjs`). The files in `audio/` are copyrighted music. Delete them.
+The terminal prints a preview URL. That page is the example site. Then change three things: replace the copy in `content.js`, set `CAREER_VISIBILITY` in `site.config.mjs` to `'all'` (or to one company `id` from your content), and delete the original personal files you do not want (`assets/loren-portrait.webp`, `assets/share-card.jpg`, the school emblem, company logos, `assets/projects/`, `data/lab/`, `audio/`, and `scripts/content.test.mjs`). The files in `audio/` are copyrighted music. Delete them.
 
 If a submodule directory is empty, run `git submodule update --init`.
 
@@ -84,7 +84,7 @@ The footer link, “Built with Loren's Galaxy”, is part of the template. Keepi
 4. **Remove the original author’s files and tests.**
    - `scripts/content.test.mjs` checks this repository’s content only
    - `.harness-e2e/` is written against that content; delete it or rewrite it
-   - `assets/loren-portrait.webp`, `assets/xidian-university-emblem.png`, the company logos, `assets/projects/`, `data/lab/`
+   - `assets/loren-portrait.webp`, `assets/share-card.jpg`, `assets/xidian-university-emblem.png`, the company logos, `assets/projects/`, `data/lab/`
    - `audio/`: copyrighted music, delete it
    - tools you will not ship: remove their script from `PUBLIC_FILES` in `scripts/site.mjs` and from `index.html`; remove a submodule with `git rm tools/<id>`
 5. **Replies on the questions page.**
@@ -116,6 +116,8 @@ Edit the source `content.js`, then restart the preview or rebuild. Do not edit `
 | --- | --- |
 | `profile.name` | Name on the home page, the wordmark, and the footer |
 | `profile.siteTitle` | Browser title |
+| `profile.siteUrl` | The site's address, https and ending in `/`, like `https://you.github.io/repo/`. Share cards, canonical links, article pages and the sitemap need absolute addresses; leave it empty to publish only the title and description, without a sitemap |
+| `profile.shareImage` | The share card `{ src: './assets/<file>.jpg', alt }`, PNG or JPEG, ideally 1200×630. The build reads its size from the file |
 | `profile.intro` / `description` | Short line / longer description |
 | `profile.motto` | Gold script at the end of the intro; empty ends the sentence with a period |
 | `profile.now` / `nowNote` | The “right now” block |
@@ -175,6 +177,14 @@ A `{ type: 'tool', tool: '<id>' }` block mounts `window.SITE_TOOLS['<id>']`. The
 The home solar system is a Three.js scene: inclined orbits, depth, spin, orbit, and occlusion, with a little camera parallax as the pointer moves. If Three.js or WebGL is missing, a flat canvas remains. Planet sizes follow real diameters on a compressed scale, and the sun is compressed further so it does not cover the navigation. Hover or keyboard focus enlarges a body, speeds its spin, highlights its orbit, and shows its real diameter.
 
 `cosmos.js` paints the textures in the browser. `globe-renderer.js` lights the Earth and the Moon in WebGL. The continents and the lunar surface are drawn, not photographed. Stars, a meteor, and mouse parallax run on a canvas and pause off the home page, off screen, or in a background tab. Each section has its own canvas ground: a survey grid, a moon chart, Earth and a satellite, Martian terrain, a voyage, Saturn’s archive, an old star map. Light and dark themes each have a palette. Nothing here is an external image, font, or tracker. The only outside request the page makes is the optional visit counter below.
+
+### Sharing and search
+
+Routes are hashes like `#writing/<id>`, so search engines and share cards only ever see the home page. The build therefore writes a static page for every article and project (`writing/<id>.html`, `projects/<id>.html`) with its own title, description, canonical link and share card. The body uses the same block rules as the site and needs no JavaScript; a button at the bottom opens the same item in the galaxy, and tools become links into the site. The build also writes `sitemap.xml` (it needs `profile.siteUrl`) and `404.html`.
+
+There is no `robots.txt`: crawlers read only the one at the root of the host, so a GitHub Pages project site under `/<repo>/` cannot provide it. To get indexed sooner, add a URL-prefix property in Google Search Console or Bing Webmaster Tools and submit `sitemap.xml`.
+
+The first load carries only what lists and cards need. Article, project and experiment bodies live in `content-details.json`, fetched while the page is idle, or on the first detail view or body search; reading times are computed at build time. A detail opened before the bodies arrive shows its title and a loading line, and a failed request says why and asks for a refresh.
 
 ### Visit counter
 

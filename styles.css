@@ -1,8 +1,8 @@
-@font-face { font-family: "Site Script"; src: url("./vendor/fonts/pinyon-script.ttf") format("truetype"); font-display: swap; font-weight: 400; }
-@font-face { font-family: "Site Display"; src: url("./vendor/fonts/cormorant-garamond.ttf") format("truetype"); font-display: swap; font-weight: 400 600; }
-@font-face { font-family: "Site Sans"; src: url("./vendor/fonts/manrope.ttf") format("truetype"); font-display: swap; font-weight: 400 600; }
-@font-face { font-family: "Site Mono"; src: url("./vendor/fonts/ibm-plex-mono.ttf") format("truetype"); font-display: swap; font-weight: 400 500; }
-@font-face { font-family: "Site Mono"; src: url("./vendor/fonts/ibm-plex-mono-semibold.ttf") format("truetype"); font-display: swap; font-weight: 600; }
+@font-face { font-family: "Site Script"; src: url("./vendor/fonts/pinyon-script.woff2") format("woff2"); font-display: swap; font-weight: 400; }
+@font-face { font-family: "Site Display"; src: url("./vendor/fonts/cormorant-garamond.woff2") format("woff2"); font-display: swap; font-weight: 400 600; }
+@font-face { font-family: "Site Sans"; src: url("./vendor/fonts/manrope.woff2") format("woff2"); font-display: swap; font-weight: 400 600; }
+@font-face { font-family: "Site Mono"; src: url("./vendor/fonts/ibm-plex-mono.woff2") format("woff2"); font-display: swap; font-weight: 400 500; }
+@font-face { font-family: "Site Mono"; src: url("./vendor/fonts/ibm-plex-mono-semibold.woff2") format("woff2"); font-display: swap; font-weight: 600; }
 @font-face { font-family: "Site Han"; src: url("./vendor/fonts/noto-serif-sc-subset.woff2") format("woff2"); font-display: swap; font-weight: 400 600; }
 
 :root {
@@ -217,10 +217,10 @@ p, h1, h2, h3 { margin: 0; overflow-wrap: anywhere; }
 .mobile-nav a span { font-family: var(--mono); font-size: 12px; align-self: center; }
 
 .view { animation: arrive .45s ease-out; }
-.hero { display: grid; grid-template-columns: minmax(340px, .34fr) .66fr; align-items: start; min-height: 630px; gap: 0; padding: 20px 0 54px; width: 100vw; margin-left: calc(50% - 50vw); padding-right: clamp(16px, 3vw, 64px); box-sizing: border-box; position: relative; }
+.hero { display: grid; grid-template-columns: minmax(340px, .34fr) .66fr; align-items: start; min-height: 630px; gap: 0; padding: 20px 0 54px; width: 100vw; margin-left: calc(50% - 50vw); padding-right: clamp(16px, 3vw, 64px); box-sizing: border-box; position: relative; overflow-x: clip; }
 /* zoom 会把内部长度（含 vw）一并放大，左边距要除回去，否则放大后就和顶部标志错位。 */
 .hero-copy { --hero-zoom: 1; position: relative; z-index: 1; zoom: var(--hero-zoom); padding-left: calc(max(32px, 50vw - 780px) / var(--hero-zoom)); }
-.hero-copy::before { content: ""; position: absolute; z-index: -1; top: -20px; bottom: -20px; left: calc(-1 * max(32px, 50vw - 780px) / var(--hero-zoom)); right: -22%; background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 82%, transparent) 0%, color-mix(in srgb, var(--bg) 66%, transparent) 30%, color-mix(in srgb, var(--bg) 30%, transparent) 55%, color-mix(in srgb, var(--bg) 8%, transparent) 74%, transparent 90%); pointer-events: none; }
+.hero-copy::before { content: ""; position: absolute; z-index: -1; top: -20px; bottom: -20px; left: calc(-1 * max(32px, 50vw - 780px) / var(--hero-zoom)); right: -22%; background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 90%, transparent) 0%, color-mix(in srgb, var(--bg) 86%, transparent) 64%, color-mix(in srgb, var(--bg) 50%, transparent) 76%, color-mix(in srgb, var(--bg) 14%, transparent) 88%, transparent 97%); pointer-events: none; }
 .eyebrow { color: var(--muted); font-size: 11px; font-weight: 400; letter-spacing: 2px; display: flex; gap: 10px; align-items: center; line-height: 1.6; }
 .status-dot { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--live); box-shadow: 0 0 4px var(--live), 0 0 10px color-mix(in srgb, var(--live) 70%, transparent); animation: live-pulse 2.4s ease-out infinite; }
 .status-dot.is-static { animation: none; }
@@ -814,6 +814,15 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(6px); }
 .reader-figure { margin: 18px 0 26px; }
 .reader-figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4px; }
 .reader-figure figcaption { margin-top: 10px; color: var(--faint); font-size: 12px; line-height: 1.8; }
+.reader-body .reader-loading { color: var(--faint); font-size: 13px; }
+.static-page { min-height: 100vh; }
+.static-article { box-sizing: border-box; width: min(760px, 100%); margin: 0 auto; padding: 48px 28px 72px; }
+.static-nav a { color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .8px; text-decoration: none; }
+.static-nav a:hover { color: var(--accent); }
+.static-kind { margin: 38px 0 0; color: var(--faint); font-family: var(--mono); font-size: 10px; letter-spacing: 1.6px; }
+.static-meta { margin: -12px 0 0; color: var(--faint); font-family: var(--mono); font-size: 11px; letter-spacing: .5px; }
+.static-tool a, .static-article .reader-refs a { color: var(--accent); }
+.static-open { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 44px; }
 .reader-body .reader-refs { padding-left: 18px; font-size: 13px; }
 .reader-refs li + li { margin-top: 6px; }
 .reader-refs a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; transition: color .2s, text-decoration-color .2s; }

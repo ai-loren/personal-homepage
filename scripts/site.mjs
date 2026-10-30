@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { lstat, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { CAREER_VISIBILITY } from '../site.config.mjs';
+import { renderStaticPages } from './static-pages.mjs';
 
 export const PROJECT_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const ALL_CAREERS_LABEL = '全部履历';
@@ -14,10 +16,10 @@ const PUBLIC_FILES = [
   'solar-system-3d.js', 'page-scenes.js', 'tools/vram-ledger.js', 'tools/ckpt-goodput/ckpt-goodput.js', 'tools/agent-trace-replay/agent-trace-replay.js', '.nojekyll',
   'assets/saturn-favicon.png',
   'vendor/three.min.js', 'vendor/THREE-LICENSE.txt',
-  'vendor/fonts/cormorant-garamond.ttf', 'vendor/fonts/ibm-plex-mono.ttf',
-  'vendor/fonts/ibm-plex-mono-semibold.ttf', 'vendor/fonts/IBM-PLEX-OFL.txt', 'vendor/fonts/OFL.txt',
-  'vendor/fonts/manrope.ttf', 'vendor/fonts/noto-serif-sc-subset.woff2',
-  'vendor/fonts/pinyon-script.ttf',
+  'vendor/fonts/cormorant-garamond.woff2', 'vendor/fonts/ibm-plex-mono.woff2',
+  'vendor/fonts/ibm-plex-mono-semibold.woff2', 'vendor/fonts/IBM-PLEX-OFL.txt', 'vendor/fonts/OFL.txt',
+  'vendor/fonts/manrope.woff2', 'vendor/fonts/noto-serif-sc-subset.woff2',
+  'vendor/fonts/pinyon-script.woff2',
 ];
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -25,6 +27,7 @@ const CONTENT_TYPES = {
   '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.ttf': 'font/ttf',
   '.woff2': 'font/woff2', '.csv': 'text/csv; charset=utf-8', '.mp3': 'audio/mpeg',
+  '.json': 'application/json; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
 };
 const DATASET_PATH = /^\.\/data\/lab\/[a-z0-9-]+\/[a-z0-9_-]+\.csv$/;
 const PROJECT_IMAGE_PATH = /^\.\/assets\/projects\/[a-z0-9-]+\/[a-z0-9_-]+\.(png|webp|jpe?g)$/;
@@ -81,7 +84,7 @@ function assertNoPrivateCareer(files, source, publicContent) {
     ]),
   ]).filter(Boolean).map((marker) => marker.toLowerCase());
   for (const [name, buffer] of files) {
-    if (!['.html', '.js', '.css', '.txt', '.csv'].includes(extname(name))) continue;
+    if (!['.html', '.js', '.css', '.txt', '.csv', '.json', '.xml'].includes(extname(name))) continue;
     const text = buffer.toString('utf8').toLowerCase();
     if (markers.some((marker) => text.includes(marker))) {
       throw new Error(`${name} contains an excluded company's information. Remove its public reference before building; private content.js data can remain.`);
@@ -117,6 +120,70 @@ export function assertProjectFacets(content) {
   }
 }
 
+// siteUrl 是网站的正式地址：分享卡片、canonical、静态页与 sitemap 都要绝对地址。留空就只输出标题和简介。
+function assertSiteUrl(content) {
+  const siteUrl = content.profile?.siteUrl;
+  if (!siteUrl) return;
+  let url = null;
+  try { url = new URL(siteUrl); } catch {}
+  if (!url || url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || !siteUrl.endsWith('/') || url.href !== siteUrl) {
+    throw new Error(`content.js profile.siteUrl expects the site's https address ending in "/", like "https://you.github.io/repo/"; got ${JSON.stringify(siteUrl)}. Use the address visitors open, or leave it empty.`);
+  }
+}
+
+// 只认 PNG 与 JPEG 的文件头；分享卡片的宽高要写进 og:image:width / height，不能靠人记。
+function imageSize(bytes) {
+  if (bytes.length > 24 && bytes.readUInt32BE(0) === 0x89504e47) return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  for (let offset = 2; offset + 9 < bytes.length;) {
+    if (bytes[offset] !== 0xff) { offset += 1; continue; }
+    const marker = bytes[offset + 1];
+    if (marker === 0xff || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd8)) { offset += marker === 0xff ? 1 : 2; continue; }
+    if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker)) {
+      return { height: bytes.readUInt16BE(offset + 5), width: bytes.readUInt16BE(offset + 7) };
+    }
+    offset += 2 + bytes.readUInt16BE(offset + 2);
+  }
+  return null;
+}
+
+// 正文类字段挪到 content-details.json：首屏只下载列表与卡片要用的部分，页面空闲时或第一次打开详情、搜索正文时再取。
+// 卡片要用的字段（实验的 metric 与 charts、作品的 image 与 description）必须留在 content.js，否则列表会缺东西。
+const DETAIL_FIELDS = {
+  articles: ['body'],
+  projects: ['body', 'translations'],
+  experiments: ['hypothesis', 'setup', 'metrics', 'findings', 'conclusion', 'references', 'datasets'],
+};
+const DETAILS_FILE = 'content-details.json';
+
+export function readingMinutes(blocks) {
+  const text = blocks.map((block) => block.text || block.items?.join(' ') || '').join(' ');
+  const hanCharacters = (text.match(/[\u3400-\u9fff]/g) || []).length;
+  const latinWords = (text.replace(/[\u3400-\u9fff]/g, ' ').match(/[A-Za-z0-9][A-Za-z0-9’'-]*/g) || []).length;
+  return Math.max(1, Math.ceil(hanCharacters / 350 + latinWords / 220));
+}
+
+function splitDetails(content) {
+  const lite = structuredClone(content);
+  const details = {};
+  for (const [kind, fields] of Object.entries(DETAIL_FIELDS)) {
+    details[kind] = {};
+    for (const item of lite[kind] || []) {
+      const moved = {};
+      for (const field of fields) {
+        if (!(field in item)) continue;
+        moved[field] = item[field];
+        delete item[field];
+      }
+      if (kind === 'articles') item.minutes = readingMinutes(moved.body || []);
+      details[kind][item.id] = moved;
+    }
+  }
+  const json = JSON.stringify(details);
+  lite.details = { file: DETAILS_FILE, version: createHash('sha256').update(json).digest('hex').slice(0, 12) };
+  return { lite, json };
+}
+
 // 到访计数是可选的外部服务：地址留空就不显示，也不放行任何外部连接。
 function assertVisits(content) {
   const { endpoint, since } = content.visits || {};
@@ -135,6 +202,7 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
   const source = await readSourceContent(root);
   const content = selectPublicContent(source, visibility);
   assertProjectFacets(content);
+  assertSiteUrl(content);
   assertVisits(content);
   const paths = new Set(PUBLIC_FILES);
   for (const company of content.experience) {
@@ -146,7 +214,7 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
       paths.add(entry.logo.slice(2));
     }
   }
-  const ownImages = [['profile.portrait', content.profile?.portrait], ...(content.journey || []).map((entry, index) => [`journey[${index}].emblem`, entry.emblem])];
+  const ownImages = [['profile.portrait', content.profile?.portrait], ['profile.shareImage', content.profile?.shareImage], ...(content.journey || []).map((entry, index) => [`journey[${index}].emblem`, entry.emblem])];
   for (const [field, image] of ownImages) {
     if (!image) continue;
     if (!ASSET_PATH.test(image.src || '') || typeof image.alt !== 'string') {
@@ -208,8 +276,20 @@ export async function createPublicFiles({ visibility = CAREER_VISIBILITY, root =
     }
   })));
   for (const [track, bytes] of tracks) files.set(track.file.slice(2), bytes);
-  files.set('content.js', Buffer.from(`window.SITE_CONTENT = ${JSON.stringify(content, null, 2)};\n`));
-  files.set('index.html', Buffer.from(renderIndex(files.get('index.html').toString('utf8'), content)));
+  let shareImage = null;
+  if (content.profile?.shareImage) {
+    const path = content.profile.shareImage.src.slice(2);
+    const size = /\.(png|jpe?g)$/.test(path) ? imageSize(files.get(path)) : null;
+    if (!size) throw new Error(`content.js profile.shareImage expects a PNG or JPEG under assets/ (1200×630 is what share cards show best); got ${content.profile.shareImage.src}. Export the image as .png or .jpg.`);
+    shareImage = { path, alt: content.profile.shareImage.alt, ...size };
+  }
+  const html = files.get('index.html').toString('utf8');
+  const stylesheet = html.match(/href="\.\/(styles\.css(?:\?v=[^"]+)?)"/)?.[1] || 'styles.css';
+  const { lite, json } = splitDetails(content);
+  files.set('content.js', Buffer.from(`window.SITE_CONTENT = ${JSON.stringify(lite, null, 2)};\n`));
+  files.set(DETAILS_FILE, Buffer.from(json));
+  files.set('index.html', Buffer.from(renderIndex(html, content, { shareImage })));
+  for (const [name, text] of renderStaticPages(content, { stylesheet, shareImage })) files.set(name, Buffer.from(text));
   assertNoPrivateCareer(files, source, content);
   return files;
 }
@@ -219,7 +299,7 @@ const RAW_TOKENS = new Set(['intro', 'focus', 'educationMeta']);
 
 // index.html 里的 {{name}} 等占位与 <!-- if:x -->…<!-- end:x --> 区块在构建时由公开内容填好：
 // 禁用 JavaScript 的访客和搜索引擎看到的首屏，与 app.js 运行后渲染的是同一份资料。
-export function renderIndex(html, content) {
+export function renderIndex(html, content, { shareImage = null } = {}) {
   const { profile = {}, journey = [], experience = [], articles = [], visits = {} } = content;
   const schooling = journey.filter((entry) => entry.degree && entry.major);
   const emblem = schooling.find((entry) => entry.emblem)?.emblem;
@@ -243,10 +323,15 @@ export function renderIndex(html, content) {
     now: profile.now,
     nowNote: profile.nowNote,
     latestTitle: articles[0]?.title,
+    siteUrl: profile.siteUrl,
+    shareImageUrl: shareImage ? `${profile.siteUrl}${shareImage.path}` : '',
+    shareImageAlt: shareImage?.alt,
+    shareImageWidth: shareImage?.width,
+    shareImageHeight: shareImage?.height,
     visitsSince: visits.since,
     visitsConnect: counter ? ` ${counter}` : '',
   };
-  const shown = { portrait: Boolean(profile.portrait), education: schooling.length > 0, emblem: Boolean(emblem), focus: Boolean(profile.focus?.length), visits: Boolean(counter) };
+  const shown = { portrait: Boolean(profile.portrait), education: schooling.length > 0, emblem: Boolean(emblem), focus: Boolean(profile.focus?.length), visits: Boolean(counter), site: Boolean(profile.siteUrl), share: Boolean(profile.siteUrl && shareImage) };
   const innermost = /<!-- if:([a-z]+) -->((?:(?!<!-- if:)[\s\S])*?)<!-- end:\1 -->/g;
   let blocks = html;
   for (let previous = ''; previous !== blocks;) {

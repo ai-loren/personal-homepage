@@ -17,6 +17,7 @@
     comments = {},
     music = {},
     visits = {},
+    details = null,
   } = structuredClone(window.SITE_CONTENT);
   const allowedCareerModes = Object.freeze(Object.keys(careerModeNames));
   const careerLocked = allowedCareerModes.length <= 1;
@@ -400,18 +401,38 @@
     });
   }
 
-  function readingTime(article) {
-    const text = article.body.map((block) => block.text || block.items?.join(' ') || '').join(' ');
-    const hanCharacters = (text.match(/[\u3400-\u9fff]/g) || []).length;
-    const latinWords = (text.replace(/[\u3400-\u9fff]/g, ' ').match(/[A-Za-z0-9][A-Za-z0-9’'-]*/g) || []).length;
-    return Math.max(1, Math.ceil(hanCharacters / 350 + latinWords / 220));
+  // 正文类字段在 content-details.json：首屏不下载，空闲时或第一次打开详情、搜索正文时再取，合并进同一批对象，只取一次。
+  // 阅读时长由构建按正文算好放在 minutes 里，列表不必等正文。
+  let detailsLoaded = !details;
+  let detailsRequest = null;
+  function loadDetails() {
+    if (detailsLoaded) return Promise.resolve();
+    detailsRequest ??= fetch(`./${details.file}?v=${encodeURIComponent(details.version)}`, { credentials: 'same-origin' })
+      .then((response) => {
+        if (!response.ok) throw new Error(`${details.file} 返回 ${response.status}`);
+        return response.json();
+      })
+      .then((extra) => {
+        for (const [kind, list] of [['articles', articles], ['projects', projects], ['experiments', experiments]]) {
+          for (const item of list || []) Object.assign(item, extra[kind]?.[item.id]);
+        }
+        detailsLoaded = true;
+      })
+      .catch((error) => {
+        detailsRequest = null;
+        throw error;
+      });
+    return detailsRequest;
   }
+
+  const readingTime = (article) => article.minutes;
 
   function renderArticles() {
     const query = $('#writing-search').value.trim().toLocaleLowerCase();
+    if (query && !detailsLoaded) loadDetails().then(renderArticles, () => {});
     const matching = articles.filter((article) => {
       const matchesCategory = articleCategory === '全部' || article.category === articleCategory;
-      const searchable = [article.title, article.summary, article.category, ...article.body.map((block) => block.text || block.items?.join(' ') || '')].join(' ');
+      const searchable = [article.title, article.summary, article.category, ...(article.body || []).map((block) => block.text || block.items?.join(' ') || '')].join(' ');
       return matchesCategory && searchable.toLocaleLowerCase().includes(query);
     });
     const pageCount = Math.max(1, Math.ceil(matching.length / articlePageSize));
@@ -894,6 +915,14 @@
 
   function renderDetail(source, page) {
     unmountReplies();
+    const waiting = page !== 'ideas' && !detailsLoaded;
+    if (waiting) {
+      const hash = location.hash;
+      const current = () => activeDetail?.item === source && location.hash === hash;
+      loadDetails().then(() => { if (current()) renderDetail(source, page); }, (error) => {
+        if (current()) $('#reader-body').innerHTML = `<p class="tool-missing">正文没有加载出来（${escapeHTML(error.message)}）。刷新页面再试一次。</p>`;
+      });
+    }
     const bilingual = page === 'projects' && Boolean(source.translations?.en);
     const english = bilingual && readerLanguage === 'en';
     const item = english ? { ...source, ...source.translations.en } : source;
@@ -911,7 +940,7 @@
       lab: () => `${item.date} / ${item.status} / 模拟数据`,
       ideas: () => `${item.date} / ${item.tags.join(' · ')}`,
     }[page]();
-    $('#reader-body').innerHTML = {
+    $('#reader-body').innerHTML = waiting ? '<p class="reader-loading">正在载入正文…</p>' : {
       lab: () => renderExperimentBody(item),
       ideas: () => `${renderBody(item.text.split('\n').map((text) => ({ type: 'p', text })))}
         <h3>回复</h3>
@@ -1313,4 +1342,9 @@
   window.addEventListener('hashchange', route);
   syncResponsiveState();
   route();
+  if (!detailsLoaded) {
+    const prefetch = () => loadDetails().catch(() => {});
+    if ('requestIdleCallback' in window) requestIdleCallback(prefetch, { timeout: 4000 });
+    else setTimeout(prefetch, 2500);
+  }
 })();

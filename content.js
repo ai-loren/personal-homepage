@@ -3,6 +3,8 @@ window.SITE_CONTENT = {
   profile: {
     name: 'loren',
     siteTitle: "Loren's Galaxy",
+    siteUrl: 'https://ai-loren.github.io/personal-homepage/',
+    shareImage: { src: './assets/share-card.jpg', alt: "Loren's Galaxy 首页：左侧是 loren 的介绍，右侧是一套可以点进去的太阳系" },
     intro: '写代码，做产品，记录有意思的想法',
     motto: 'Carpe Diem',
     description: 'ML Infra 平台全栈研发，Agentic ML Infra（ML 平台的 Agent、Skill 与 CLI），Agent 运行时（ADK 与 Harness），Multi-Agent Long-Horizon 框架，Personal Agent / Team Agent / Agent Team。',

@@ -86,7 +86,7 @@ node scripts/site.mjs serve
 4. **删掉原作者的个人素材和专属测试**。
    - `scripts/content.test.mjs`：只核对原作者那份内容
    - `.harness-e2e/` 下的浏览器测试：按原作者的内容写的，可以删掉或照着改
-   - `assets/loren-portrait.webp`、`assets/xidian-university-emblem.png`、各公司 logo、`assets/projects/`、`data/lab/`
+   - `assets/loren-portrait.webp`、`assets/share-card.jpg`、`assets/xidian-university-emblem.png`、各公司 logo、`assets/projects/`、`data/lab/`
    - `audio/`：有版权的音乐，一定要删
    - 用不到的小工具：从 `scripts/site.mjs` 的 `PUBLIC_FILES` 和 `index.html` 里去掉对应脚本；子模块用 `git rm tools/<id>` 移除
 5. **问题页的回复区**。
@@ -126,6 +126,8 @@ node scripts/site.mjs serve
 | --- | --- |
 | `profile.name` | 首页、站点标识和页脚上的名字 |
 | `profile.siteTitle` | 首页浏览器标题 |
+| `profile.siteUrl` | 网站的正式地址，https 开头、`/` 结尾，例如 `https://you.github.io/repo/`。分享卡片、canonical、文章静态页与 sitemap 都要绝对地址；留空就只输出标题和简介，不生成 sitemap |
+| `profile.shareImage` | 分享卡片 `{ src: './assets/<文件名>.jpg', alt }`，PNG 或 JPEG，1200×630 最合适；宽高由构建从图片里读出，填进 `og:image:width` / `height` |
 | `profile.intro` / `description` | 简短介绍 / 详细介绍 |
 | `profile.motto` | 首页介绍句末尾的金色书法短语；留空时介绍句以句号结尾 |
 | `profile.now` / `nowNote` | 首页「此刻」内容 |
@@ -201,6 +203,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-co
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/ckpt-goodput.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/agent-trace-replay.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/visits.js)"
+npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests run-code "$(cat .harness-e2e/lazy-details.js)"
 npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 ```
 
@@ -212,7 +215,7 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 
 ## 站点
 
-字体在本地：书法品牌字、高对比英文衬线、中文宋体、现代无衬线正文、等宽标签。深浅色会记住。手机可以导航，键盘可以操作，Escape 关闭弹窗。系统打开「减少动态效果」时，画面保持静止。联系邮箱可以复制；GitHub 地址留空就不显示入口。
+字体在本地：书法品牌字、高对比英文衬线、中文宋体、现代无衬线正文、等宽标签。发布的都是 woff2：拉丁字体由 `scripts/subset-fonts.sh` 从同目录的 TTF 裁剪（只留拉丁、希腊、标点、箭头与数学符号，保留可变字重），IBM Plex Mono 带保留字体名不能自己改，用的是 IBM 官方发布的 woff2。深浅色会记住。手机可以导航，键盘可以操作，Escape 关闭弹窗。系统打开「减少动态效果」时，画面保持静止。联系邮箱可以复制；GitHub 地址留空就不显示入口。
 
 文字按工作、人生、技术、随想分类，可搜索标题、摘要和正文。每页 6 / 10 / 20 条，默认 10 条；切换分类或搜索时回到第 1 页。作品按 `projectFacets` 每个维度一排筛选（类型 / 使用 / 代码），各排同时生效，「使用」可以多选，一个作品可以同时是 Web、CLI、SDK。按钮只列出至少有一个作品用到的值，只剩一个值的维度整排不显示，会让结果变空的选项被禁用。构建会拒绝 `projectFacets` 里没有声明的值，加新取值要先在那里声明。
 
@@ -244,6 +247,14 @@ npx --yes --package=@playwright/cli@0.1.21 playwright-cli -s=career-tests close
 页头右上角的音符按钮打开面板，可开关背景音乐并调音量。曲目在 `content.js` 的 `music.tracks` 中按顺序循环。进入页面时默认以 50% 音量尝试自动播放。浏览器禁止无手势自动出声时，改为在访客第一次点击、触摸或按键时开始。访客主动关闭后不再自动播放，开关和音量存在 localStorage。当前曲目是受版权保护的电影原声，未取得授权，面板底部有版权声明和联系方式。收到版权方要求时，删除 `audio/` 下的文件并改写 git 历史、强制推送，才能彻底移除。构建时缺文件的曲目会被移出播放列表，全部缺失则隐藏音乐控件。
 
 每个问题点开后有独立回复区，由 giscus（GitHub Discussions）承载。访客登录 GitHub 后回复，按 `question:<问题 id>` 对应讨论帖。回复只以 giscus.app 的跨域 iframe 嵌入，带 sandbox，本站不执行第三方脚本或样式。`index.html` 的 CSP 只放行本站资源与 `frame-src https://giscus.app`，因此页面里不能写内联脚本、事件属性或 style 属性，CSS 变量要用 `element.style.setProperty` 设置。`comments.categoryId` 为空时，回复区只显示「正在接入中」，不加载任何外部内容。`giscus.json` 只放行 `comments.site` 的域名，测试会校验两者一致。在其他域名（含本地预览）打开时，回复区不嵌入 giscus，只给出跳到正式网站同一问题的链接。要在本地测试回复，需临时把本地地址加进 `giscus.json` 的 `origins` 并推送。问题 id 一旦发布不要改，否则旧回复会和问题脱钩。
+
+### 分享与搜索
+
+站内是 `#writing/<id>` 这样的 hash 路由，搜索引擎和分享卡片只认得首页。所以构建会给每篇文章、每个作品各生成一张静态页（`writing/<id>.html`、`projects/<id>.html`），带自己的标题、简介、canonical 和分享卡片，正文按站内同一套块规则渲染，不需要 JavaScript；页面底部的按钮进入星系里的同一篇。小工具在静态页里换成进站的链接。另外生成 `sitemap.xml`（需要 `profile.siteUrl`）和 `404.html`。
+
+没有生成 `robots.txt`：搜索引擎只读域名根目录下的那一份，GitHub Pages 的项目站点（`/<仓库名>/` 下）放了也不会被读。要让搜索引擎尽快收录，到 Google Search Console 或必应站长工具添加网址前缀资源，并提交 `sitemap.xml`。
+
+首屏只下载列表与卡片要用的数据。文章、作品与实验的正文在 `content-details.json`，页面空闲时提前取，或第一次打开详情、搜索正文时再取；阅读时长由构建算好。打开详情时正文没到，先显示标题和「正在载入正文…」；取不到时说明原因并提示刷新。
 
 ### 到访计数
 
@@ -277,7 +288,7 @@ npx wrangler deploy                         # 打印的 https://galaxy-visits.<�
 
 本站使用 hash 路由，不需要服务端重写，也可以放在子目录中。上述托管设置要在平台上实际应用；改本地代码不会自动调整已有的线上部署。
 
-当前实现适合个人展示，内容在本地文件里维护。留言、订阅、跨设备在线编辑需要另接服务。每篇文章单独的搜索引擎收录与分享预览，可以以后用静态站点生成器补上。
+当前实现适合个人展示，内容在本地文件里维护。留言、订阅、跨设备在线编辑需要另接服务。
 
 ## 许可
 

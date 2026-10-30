@@ -7,17 +7,32 @@
     <meta name="theme-color" content="#0c1014">
     <meta name="description" content="{{description}}">
     <title>{{siteTitle}}</title>
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{siteTitle}}">
+    <meta property="og:title" content="{{siteTitle}}">
+    <meta property="og:description" content="{{description}}">
+    <meta property="og:locale" content="zh_CN">
+    <!-- if:site --><link rel="canonical" href="{{siteUrl}}">
+    <meta property="og:url" content="{{siteUrl}}"><!-- end:site -->
+    <!-- if:share --><meta property="og:image" content="{{shareImageUrl}}">
+    <meta property="og:image:width" content="{{shareImageWidth}}">
+    <meta property="og:image:height" content="{{shareImageHeight}}">
+    <meta property="og:image:alt" content="{{shareImageAlt}}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{shareImageUrl}}"><!-- end:share -->
+    <meta name="twitter:title" content="{{siteTitle}}">
+    <meta name="twitter:description" content="{{description}}">
     <link rel="icon" type="image/png" sizes="128x128" href="./assets/saturn-favicon.png?v=20260921-1">
     <link rel="preload" href="./vendor/fonts/noto-serif-sc-subset.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="./styles.css?v=20261029-visits">
-    <script src="./vendor/three.min.js" defer></script>
-    <script src="./content.js?v=20261029-visits" defer></script>
+    <link rel="stylesheet" href="./styles.css?v=20261030-polish">
+    <script src="./content.js?v=20261030-polish" defer></script>
     <script src="./tools/vram-ledger.js?v=20261007-ledger3" defer></script>
     <script src="./tools/ckpt-goodput/ckpt-goodput.js?v=20261007-ckpt3" defer></script>
     <script src="./tools/agent-trace-replay/agent-trace-replay.js?v=20261007-trace" defer></script>
-    <script src="./app.js?v=20261029-visits" defer></script>
+    <script src="./app.js?v=20261030-polish" defer></script>
     <script src="./globe-renderer.js" defer></script>
     <script src="./cosmos.js?v=20260922-17" defer></script>
+    <script src="./vendor/three.min.js" defer></script>
     <script src="./solar-system-3d.js?v=20261005-title" defer></script>
     <script src="./page-scenes.js?v=20260922-12" defer></script>
   </head>

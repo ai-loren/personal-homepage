@@ -107,6 +107,17 @@ test('the home page counts travelers from 2026.10.29 through the galaxy-visits w
   assert.match(worker, /^ALLOWED_ORIGINS = "https:\/\/ai-loren\.github\.io"$/m, 'the worker must accept the origin the site is served from');
 });
 
+test('the site shares as a 1200×630 card and every article and project has a page in the sitemap', async () => {
+  const files = await createPublicFiles();
+  const html = files.get('index.html').toString();
+  assert.match(html, /<meta property="og:image" content="https:\/\/ai-loren\.github\.io\/personal-homepage\/assets\/share-card\.jpg">/);
+  assert.match(html, /<meta property="og:image:width" content="1200">\s*<meta property="og:image:height" content="630">/);
+  const pages = [...files.keys()].filter((name) => /^(writing|projects)\/[a-z0-9-]+\.html$/.test(name));
+  assert.equal(pages.length, source.articles.length + source.projects.length);
+  const locs = [...files.get('sitemap.xml').toString().matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+  assert.deepEqual(locs, ['https://ai-loren.github.io/personal-homepage/', ...pages.map((name) => `https://ai-loren.github.io/personal-homepage/${name}`)]);
+});
+
 test('all and ByteDance publications still build with their logos', async () => {
   for (const mode of ['all', 'bytedance']) {
     const files = await createPublicFiles({ visibility: mode });

@@ -2,10 +2,12 @@
 // 每条要么拿 content.example.js 当固定样本、断言写死的结果，要么对当前 content.js 逐项套用同一条规则。
 // 只核对 loren 那份内容的断言在 content.test.mjs。
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import { copyFile, mkdir, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 import { PROJECT_ROOT, assertProjectFacets, createPreviewServer, createPublicFiles, readSourceContent, renderIndex, selectPublicContent, writePublicFiles } from './site.mjs';
 import { decodeContent, stage, temporaryDirectory, writeContent } from './test-helpers.mjs';
 
@@ -290,6 +292,130 @@ test('the visit counter is opt-in, and its origin is the only outside address th
     await writeContent(root, { ...counted, visits: { endpoint: 'https://galaxy-visits.example.workers.dev', since } });
     await assert.rejects(createPublicFiles({ root, visibility: 'all' }), /visits\.since expects the first counted day as YYYY\.MM\.DD/, String(since));
   }
+});
+
+const metaOf = (html, key) => html.match(new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)">`))?.[1];
+const rawContent = (files) => {
+  const context = { window: {} };
+  runInNewContext(files.get('content.js').toString(), context);
+  return JSON.parse(JSON.stringify(context.window.SITE_CONTENT));
+};
+
+test('share cards come from profile.siteUrl and profile.shareImage, with the size read from the image file', async (t) => {
+  const shared = structuredClone(example);
+  shared.profile.siteUrl = 'https://ada.example.org/galaxy/';
+  shared.profile.shareImage = { src: './assets/share-probe.jpg', alt: 'Ada "home"' };
+  const root = await stage(t, shared);
+  await copyFile(join(PROJECT_ROOT, 'assets/share-card.jpg'), join(root, 'assets/share-probe.jpg'));
+  await copyFile(join(PROJECT_ROOT, 'assets/saturn-favicon.png'), join(root, 'assets/share-probe.png'));
+  await copyFile(join(PROJECT_ROOT, 'assets/loren-portrait.webp'), join(root, 'assets/share-probe.webp'));
+  const files = await createPublicFiles({ root, visibility: 'all' });
+  const html = files.get('index.html').toString();
+  assert.equal(metaOf(html, 'og:image'), 'https://ada.example.org/galaxy/assets/share-probe.jpg');
+  assert.deepEqual([metaOf(html, 'og:image:width'), metaOf(html, 'og:image:height')], ['1200', '630'], 'a progressive JPEG reports its own size');
+  assert.equal(metaOf(html, 'og:image:alt'), 'Ada &quot;home&quot;');
+  assert.equal(metaOf(html, 'twitter:card'), 'summary_large_image');
+  assert.equal(metaOf(html, 'og:url'), 'https://ada.example.org/galaxy/');
+  assert.match(html, /<link rel="canonical" href="https:\/\/ada\.example\.org\/galaxy\/">/);
+  assert.deepEqual([metaOf(html, 'og:title'), metaOf(html, 'twitter:title')], ['Ada&#39;s Galaxy', 'Ada&#39;s Galaxy']);
+  assert(files.has('assets/share-probe.jpg'));
+
+  await writeContent(root, { ...shared, profile: { ...shared.profile, shareImage: { src: './assets/share-probe.png', alt: 'png' } } });
+  const png = (await createPublicFiles({ root, visibility: 'all' })).get('index.html').toString();
+  assert.deepEqual([metaOf(png, 'og:image:width'), metaOf(png, 'og:image:height')], ['128', '128']);
+
+  await writeContent(root, example);
+  const quiet = (await createPublicFiles({ root, visibility: 'all' })).get('index.html').toString();
+  assert(!/rel="canonical"|og:url|og:image|twitter:card/.test(quiet), 'without siteUrl and shareImage no absolute address is published');
+  assert.equal(metaOf(quiet, 'og:description'), escapeHTML(example.profile.description));
+
+  for (const siteUrl of ['http://ada.example.org/', 'https://ada.example.org/galaxy', 'https://ada.example.org/?a=1', 'https://ada.example.org/#top', 'ada.example.org/', 'https://user:pw@ada.example.org/']) {
+    await writeContent(root, { ...shared, profile: { ...shared.profile, siteUrl } });
+    await assert.rejects(createPublicFiles({ root, visibility: 'all' }), /profile\.siteUrl expects the site's https address ending in "\/"/, siteUrl);
+  }
+  await writeContent(root, { ...shared, profile: { ...shared.profile, shareImage: { src: './assets/share-probe.webp', alt: 'webp' } } });
+  await assert.rejects(createPublicFiles({ root, visibility: 'all' }), /profile\.shareImage expects a PNG or JPEG/);
+  await writeContent(root, { ...shared, profile: { ...shared.profile, shareImage: { src: '../share.jpg', alt: 'x' } } });
+  await assert.rejects(createPublicFiles({ root, visibility: 'all' }), /content\.js profile\.shareImage expects \{ src: '\.\/assets\/<filename>/);
+});
+
+test('every article and project gets a static page with its own title, description and canonical address', async (t) => {
+  const site = 'https://ada.example.org/galaxy/';
+  const content = structuredClone(example);
+  content.profile.siteUrl = site;
+  content.articles[1].title = 'Charts <script>alert(1)</script> & "quotes"';
+  content.articles[1].body.push({ type: 'links', items: [{ text: 'next', url: '#writing/running-notes' }, { text: 'lab', url: '#lab/chart-render' }, { text: 'out', url: 'javascript:alert(1)' }, { text: 'web', url: 'https://example.org/a' }] });
+  content.projects[0].body.push({ type: 'tool', tool: 'vram-ledger' });
+  const root = await stage(t, content);
+  const files = await createPublicFiles({ root, visibility: 'all' });
+  const expected = [...content.articles.map((article) => `writing/${article.id}.html`), ...content.projects.map((project) => `projects/${project.id}.html`)];
+  assert.deepEqual([...files.keys()].filter((name) => /^(writing|projects)\//.test(name)).sort(), [...expected].sort());
+
+  const article = files.get('writing/first-week.html').toString();
+  assert.match(article, /<title>Charts &lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; &quot;quotes&quot; · Ada&#39;s Galaxy<\/title>/);
+  assert.equal(metaOf(article, 'description'), escapeHTML(content.articles[1].summary));
+  assert.match(article, /<link rel="canonical" href="https:\/\/ada\.example\.org\/galaxy\/writing\/first-week\.html">/);
+  assert.equal(metaOf(article, 'og:type'), 'article');
+  assert.match(article, /<li><a href="\.\.\/writing\/running-notes\.html">next →<\/a><\/li><li><a href="\.\.\/#lab\/chart-render">lab →<\/a><\/li><li>out<\/li><li><a href="https:\/\/example\.org\/a" rel="noopener noreferrer">web ↗<\/a><\/li>/);
+  assert.match(article, /<a class="button" href="\.\.\/#writing\/first-week">在星系里阅读 ↗<\/a>/);
+  assert(article.includes(`<p>${escapeHTML(content.articles[1].body[0].text)}</p>`), 'the body is in the page, readable without JavaScript');
+  const project = files.get('projects/chart-kit.html').toString();
+  assert.match(project, /<p class="static-tool"><a href="\.\.\/#projects\/chart-kit">这里是一个能直接用的小工具，要在网站里打开 ↗<\/a><\/p>/);
+  for (const name of [...expected, '404.html']) {
+    const page = files.get(name).toString();
+    assert.match(page, /<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none';/, name);
+    assert(!/<script/i.test(page), `${name} must not contain a script`);
+  }
+
+  const sitemap = files.get('sitemap.xml').toString();
+  assert.deepEqual([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]), [site, ...expected.map((name) => site + name)]);
+  assert.match(sitemap, /<loc>https:\/\/ada\.example\.org\/galaxy\/writing\/one-chart-one-question\.html<\/loc><lastmod>2026-09-20<\/lastmod>/);
+  const missing = files.get('404.html').toString();
+  assert.match(missing, /<link rel="stylesheet" href="\/galaxy\/styles\.css/);
+  assert.match(missing, /<a class="button" href="\/galaxy\/">回到首页 ↗<\/a>/);
+
+  await writeContent(root, example);
+  const quiet = await createPublicFiles({ root, visibility: 'all' });
+  assert(!quiet.has('sitemap.xml'), 'a sitemap needs absolute addresses, so no siteUrl means no sitemap');
+  assert(!quiet.get('writing/first-week.html').toString().includes('rel="canonical"'));
+  assert.match(quiet.get('404.html').toString(), /<link rel="stylesheet" href="\/styles\.css/);
+
+  await writeContent(root, { ...example, articles: [{ ...example.articles[0], id: 'Bad_Id' }, ...example.articles.slice(1)] });
+  await assert.rejects(createPublicFiles({ root, visibility: 'all' }), /Article id "Bad_Id" becomes the file writing\/<id>\.html; expected lowercase letters, digits and hyphens/);
+});
+
+test('detail fields ship in content-details.json, and content.js keeps only what lists and cards need', async (t) => {
+  const content = structuredClone(example);
+  content.articles.push(
+    { ...example.articles[0], id: 'probe-two-minutes', body: [{ type: 'p', text: `${'字'.repeat(351)} word` }] },
+    { ...example.articles[0], id: 'probe-four-minutes', body: [{ type: 'p', text: `${'字'.repeat(700)}${' word'.repeat(440)}` }] },
+  );
+  content.projects[0].translations = { en: { tagline: 'Probe', body: [{ type: 'p', text: 'English probe body.' }] } };
+  const root = await stage(t, content);
+  const files = await createPublicFiles({ root, visibility: 'all' });
+  const lite = rawContent(files);
+  const json = files.get('content-details.json').toString();
+  assert.deepEqual(lite.details, { file: 'content-details.json', version: createHash('sha256').update(json).digest('hex').slice(0, 12) });
+  assert.deepEqual(lite.articles.map((article) => [article.id, article.minutes, 'body' in article]), [
+    ['one-chart-one-question', 1, false], ['first-week', 1, false], ['running-notes', 1, false], ['probe-two-minutes', 2, false], ['probe-four-minutes', 4, false],
+  ]);
+  for (const project of lite.projects) assert.deepEqual(['body', 'translations'].filter((field) => field in project), [], project.id);
+  for (const experiment of lite.experiments) {
+    assert.deepEqual(['hypothesis', 'setup', 'metrics', 'findings', 'conclusion', 'references', 'datasets'].filter((field) => field in experiment), [], experiment.id);
+    assert(experiment.metric && experiment.charts?.length, 'cards still draw the metric and the sparkline');
+  }
+  const details = JSON.parse(json);
+  assert.deepEqual(Object.keys(details), ['articles', 'projects', 'experiments']);
+  assert.deepEqual(details.articles['first-week'].body, content.articles[1].body);
+  assert.deepEqual(details.experiments['chart-render'].findings, content.experiments[0].findings);
+  assert.deepEqual(details.projects['chart-kit'].translations, content.projects[0].translations);
+  const merged = decodeContent(files);
+  assert.deepEqual(merged.projects.map((project) => project.body), content.projects.map((project) => project.body));
+
+  const leaking = structuredClone(content);
+  leaking.experiments[0].findings = [...leaking.experiments[0].findings, 'Project Roadrunner doubled throughput.'];
+  await writeContent(root, leaking);
+  await assert.rejects(createPublicFiles({ root, visibility: 'globex' }), /content-details\.json contains an excluded company's information/, 'a leak that only reaches content-details.json still stops publication');
 });
 
 test('the footer credits the template with a link to its repository', async () => {

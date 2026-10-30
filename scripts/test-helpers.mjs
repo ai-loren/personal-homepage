@@ -3,10 +3,18 @@ import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { PROJECT_ROOT, createPublicFiles } from './site.mjs';
 
+// 发布出去的完整公开内容：content.js 加上按需加载的 content-details.json，与浏览器合并后看到的一致。
 export const decodeContent = (files) => {
   const context = { window: {} };
   runInNewContext(files.get('content.js').toString(), context);
-  return JSON.parse(JSON.stringify(context.window.SITE_CONTENT));
+  const content = JSON.parse(JSON.stringify(context.window.SITE_CONTENT));
+  const details = files.get('content-details.json');
+  if (!details) return content;
+  const extra = JSON.parse(details.toString());
+  for (const [kind, byId] of Object.entries(extra)) {
+    for (const item of content[kind] || []) Object.assign(item, byId[item.id]);
+  }
+  return content;
 };
 
 export async function temporaryDirectory(t) {
