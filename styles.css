@@ -245,6 +245,8 @@ p, h1, h2, h3 { margin: 0; overflow-wrap: anywhere; }
 .hero-profile-meta dt { color: var(--faint); font: 400 9px/1.5 var(--mono); letter-spacing: 1px; }
 .hero-profile-meta dd { margin: 5px 0 0; color: var(--text); font: 600 12px/1.6 var(--mono); overflow-wrap: anywhere; }
 .hero-profile-meta div:first-child dd { color: var(--accent); }
+/* 职位用衬线体：无衬线体里「AI」的大写 I 和小写 l 长得一样。 */
+.hero-profile-meta dd[data-profile="role"] { font: 600 17px/1.35 var(--display); letter-spacing: .01em; }
 [data-profile="role"], [data-profile-field="role"] { white-space: pre-line; overflow-wrap: anywhere; }
 .hero-profile-location > span { display: block; }
 .hero-profile-location small { display: block; margin-top: 2px; color: var(--faint); font: 400 9px/1.5 var(--mono); letter-spacing: .8px; }

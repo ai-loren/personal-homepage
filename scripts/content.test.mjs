@@ -19,7 +19,7 @@ test('the published site is locked to Tencent', () => {
   assert.equal(content.careerMode, 'tencent');
   assert.deepEqual(content.careerModes, { tencent: 'Tencent' });
   assert.deepEqual(content.experience.map((company) => company.id), ['tencent']);
-  assert.equal(content.experience[0].roles[0].title, 'Hunyuan AI Infra Engineer');
+  assert.equal(content.experience[0].roles[0].title, 'Hy AI Infra Engineer');
 });
 
 test('all and ByteDance modes keep the full career data, with menu names from content.js', () => {
@@ -62,7 +62,7 @@ test('the home page is filled with loren’s profile', async () => {
   assert.match(html, /<img src="\.\/assets\/loren-portrait\.webp" width="720" height="960" alt="loren 的个人照片">/);
   assert.match(html, /<strong class="hero-education-school">西安电子科技大学<\/strong>/);
   assert.match(html, /<span class="hero-education-meta">硕士 · 计算机技术 <i>／<\/i> 本科 · 软件工程<\/span>/);
-  assert.match(html, /<dd data-profile="role">Tencent Hunyuan AI Infra Engineer<\/dd>/);
+  assert.match(html, /<dd data-profile="role">Tencent Hy AI Infra Engineer<\/dd>/);
   assert.equal((html.match(/<ul class="hero-focus"[^>]*>(.*?)<\/ul>/s)[1].match(/<li>/g) || []).length, 5);
   assert.match(html, /<span class="coordinate-name">LOREN&#39;S SOLAR SYSTEM<\/span>/);
 });
@@ -147,7 +147,7 @@ test('the preview serves the Tencent snapshot, the lab CSVs, and never the ByteD
   for (const path of ['/content.js', '/content.js?careerMode=all', '/content.js?careerMode=bytedance']) {
     const body = await (await fetch(origin + path)).text();
     assert(!privateText.test(body), path);
-    assert.match(body, /Hunyuan AI Infra Engineer/);
+    assert.match(body, /Hy AI Infra Engineer/);
   }
   for (const path of ['/assets/bytedance-logo.png', '/assets/bytedance-seed-logo.png', '/assets/ocean-engine-logo.png']) {
     assert.equal((await fetch(origin + path)).status, 404, path);

@@ -12,10 +12,10 @@ async (page) => {
     const companies = await page.locator('.experience-company').evaluateAll((nodes) => nodes.map((node) => node.dataset.companyId));
     assert(JSON.stringify(companies) === '["tencent"]', `${label}: non-Tencent company displayed`);
     for (const selector of ['[data-profile="role"]', '[data-profile-field="role"]']) {
-      assert(await page.locator(selector).textContent() === 'Tencent Hunyuan AI Infra Engineer', `${label}: wrong profile role`);
+      assert(await page.locator(selector).textContent() === 'Tencent Hy AI Infra Engineer', `${label}: wrong profile role`);
     }
     assert(!privateText.test(await page.locator('#main').innerHTML()), `${label}: private history leaked into content`);
-    assert((await page.locator('[data-role="Hunyuan AI Infra Engineer"] .journey-period').innerText()).includes('2026.09 — 至今'), `${label}: Hunyuan period changed`);
+    assert((await page.locator('[data-role="Hy AI Infra Engineer"] .journey-period').innerText()).includes('2026.09 — 至今'), `${label}: Hunyuan period changed`);
     assert(await page.locator('.journey-item-education').count() === 2, `${label}: education changed`);
     for (const image of await page.locator('[data-company-id="tencent"] img').all()) await image.evaluate((node) => node.decode());
   };

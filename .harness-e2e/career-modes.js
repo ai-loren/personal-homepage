@@ -12,7 +12,7 @@ async (page, fixture) => {
   page.on('pageerror', onError);
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const roles = {
-    tencent: 'Tencent Hunyuan AI Infra Engineer',
+    tencent: 'Tencent Hy AI Infra Engineer',
     bytedance: 'Bytedance Seed AI Infra Engineer',
   };
   const companiesByMode = {
@@ -73,14 +73,14 @@ async (page, fixture) => {
     }
     if (ids.includes('tencent')) {
       const company = page.locator('[data-company-id="tencent"]');
-      assert(await company.locator('[data-role="Hunyuan AI Infra Engineer"]').count() === 1, `${label}: Hunyuan missing`);
-      assert((await company.locator('.journey-period').innerText()).includes('2026.09 — 至今'), `${label}: incorrect Hunyuan period`);
+      assert(await company.locator('[data-role="Hy AI Infra Engineer"]').count() === 1, `${label}: Hy role missing`);
+      assert((await company.locator('.journey-period').innerText()).includes('2026.09 — 至今'), `${label}: incorrect Hy period`);
       assert((await company.locator('.experience-company-header').innerText()).includes('2026.09 — 至今'), `${label}: incorrect Tencent period`);
       assert(await company.locator('.experience-highlights, .experience-skills, .experience-location').count() === 0, `${label}: unprovided Tencent data rendered`);
       assert(await company.locator('.experience-brand-text').count() === 0, `${label}: text placeholders remain`);
       const logoSelectors = [
         '.experience-company-logo img[src="./assets/tencent-logo.png"][alt="Tencent"]',
-        '.experience-role-logo img[src="./assets/tencent-hunyuan-logo.png"][alt="Tencent Hunyuan"]',
+        '.experience-role-logo img[src="./assets/tencent-hunyuan-logo.png"][alt="Tencent Hy"]',
       ];
       assert(await company.locator('img').count() === 2, `${label}: expected two brand images`);
       for (const selector of logoSelectors) {
@@ -264,7 +264,7 @@ async (page, fixture) => {
       company.roles[0].start = '';
     });
     assert(await page.locator('[data-company-id="tencent"] .experience-company-identity p').textContent() === '在职', 'Missing start: guessed Tencent date or duration');
-    assert(await page.locator('[data-role="Hunyuan AI Infra Engineer"] .journey-period').textContent() === '在职', 'Missing start: guessed Hunyuan date or duration');
+    assert(await page.locator('[data-role="Hy AI Infra Engineer"] .journey-period').textContent() === '在职', 'Missing start: guessed Hunyuan date or duration');
     results.push('missing current start date: PASS');
     await loadMode('all', (content) => { content.experience.find((company) => company.id === 'bytedance').roles[0].end = '2026-08'; });
     assert((await page.locator('[data-company-id="bytedance"] .experience-company-header').innerText()).includes('2024.04 — 2026.08'), 'Completed dates: incorrect company end');
@@ -272,7 +272,7 @@ async (page, fixture) => {
     const now = new Date();
     const months = (now.getFullYear() - 2026) * 12 + now.getMonth() - 8 + 1;
     const duration = [Math.floor(months / 12) ? `${Math.floor(months / 12)} 年` : '', months % 12 ? `${months % 12} 个月` : ''].filter(Boolean).join(' ');
-    assert(await page.locator('[data-role="Hunyuan AI Infra Engineer"] .journey-period small').textContent() === duration, 'Completed dates: incorrect current duration');
+    assert(await page.locator('[data-role="Hy AI Infra Engineer"] .journey-period small').textContent() === duration, 'Completed dates: incorrect current duration');
     results.push('completed dates: PASS');
     const noJS = await page.context().browser().newContext({ javaScriptEnabled: false });
     try {
